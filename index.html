@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>بوابة إجتماع أسرة عائلة الحميدان ١٤٤٨هـ | تسجيل واشتراكات الأسرة</title>
+  
+  <!-- Favicon / Meta -->
+  <meta name="description" content="البوابة الرسمية لحساب وتأكيد اشتراكات إجتماع أسرة عائلة الحميدان لعام ١٤٤٨هـ بقاعة غناتي.">
+  <meta name="theme-color" content="#1e2329">
+
+  <!-- Core Stylesheet with Thmanyah Font & Beige/Gray Theme -->
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <!-- Firebase Compat Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <!-- Floating Switcher Pill (Quick View Toggle: Desktop <-> Mobile) -->
+  <button type="button" class="floating-view-switch" id="floatingViewToggle" title="تبديل وضع العرض">
+    <svg viewBox="0 0 24 24">
+      <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+    </svg>
+    <span>تصميم الجوال</span>
+  </button>
+
+  <!-- =========================================================================
+       POPUP 1: DEVICE CHOICE MODAL (شاشة اختيار وضع العرض)
+       ========================================================================= -->
+  <div class="modal-overlay" id="deviceChoiceModal">
+    <div class="modal-card">
+      <div class="modal-icon-badge">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 6h16v10H4zm16-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h6v2H8v2h8v-2h-2v-2h6c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/>
+        </svg>
+      </div>
+      <h2 class="modal-title">مرحباً بكم في بوابة عائلة الحميدان</h2>
+      <p class="modal-desc">يسرنا حضوركم لاجتماع الأسرة المبارك. يرجى اختيار وضع العرض المفضل لديكم:</p>
+
+      <div class="device-options-grid">
+        <button type="button" class="device-option-btn" onclick="selectDeviceAndOpenLogin('desktop')">
+          <svg viewBox="0 0 24 24">
+            <path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z"/>
+          </svg>
+          <span class="device-option-title">تصميم سطح المكتب</span>
+          <span class="device-option-sub">شاشة كاملة وتوزيع متكامل</span>
+        </button>
+
+        <button type="button" class="device-option-btn" onclick="selectDeviceAndOpenLogin('mobile')">
+          <svg viewBox="0 0 24 24">
+            <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+          </svg>
+          <span class="device-option-title">تصميم الجوال</span>
+          <span class="device-option-sub">مظهر هاتف ذكي مريح وسلس</span>
+        </button>
+      </div>
+
+      <div style="font-size: 0.82rem; color: var(--gray-500);">
+        * يمكنك التبديل بين تصميم سطح المكتب وتصميم الجوال في أي وقت من الزر العائم في أعلى الشاشة.
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       POPUP 2: VISITOR LOGIN / REGISTRATION MODAL (شاشة دخول الزائر)
+       ========================================================================= -->
+  <div class="modal-overlay" id="visitorLoginModal">
+    <div class="modal-card" style="max-width: 460px;">
+      <div class="modal-icon-badge">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+      </div>
+      <h3 class="modal-title">تسجيل دخول المشترك / رب الأسرة</h3>
+      <p class="modal-desc">فضلاً أدخل اسمك وكلمة المرور لحفظ بيانات أسرتك ومتابعة السداد تلقائياً:</p>
+
+      <form onsubmit="event.preventDefault(); submitVisitorModalLogin();" style="display:flex; flex-direction:column; gap:14px; text-align:right;">
+        <div class="auth-input-group">
+          <label>اسم المشترك / رب الأسرة *</label>
+          <input type="text" id="modalVisitorName" class="auth-input" placeholder="مثال: صالح بن محمد الحميدان" required autocomplete="name">
+        </div>
+
+        <div class="auth-input-group">
+          <label>كلمة المرور / رمز PIN الخاص بك *</label>
+          <input type="text" id="modalVisitorPin" class="auth-input" placeholder="مثال: 1234 (لحفظ ومتابعة تسجيلك)" required maxlength="12">
+        </div>
+
+        <div class="auth-input-group">
+          <label>رقم الجوال (اختياري)</label>
+          <input type="tel" id="modalVisitorPhone" class="auth-input" placeholder="05xxxxxxxx" dir="ltr">
+        </div>
+
+        <button type="submit" class="btn-action btn-primary-submit" style="margin-top:6px;">
+          دخول إلى الحاسبة والتسجيل
+        </button>
+
+        <button type="button" class="btn-action btn-subtle" onclick="closeVisitorLoginModal()">
+          المتابعة كزائر دون تسجيل مسبق
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       2. PIXEL 6 SIMULATOR WRAPPER (وضع محاكي هاتف جوجل بيكسل 6)
+       ========================================================================= -->
+  <div class="pixel6-simulator-wrapper" id="deviceWrapper" style="display: none;">
+    
+    <div class="simulator-toolbar">
+      <span class="device-badge">
+        <svg style="width: 16px; height: 16px; fill: currentColor;" viewBox="0 0 24 24">
+          <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+        </svg>
+        تصميم الجوال
+      </span>
+      <button type="button" onclick="applyDeviceMode('desktop')">التبديل إلى تصميم سطح المكتب</button>
+    </div>
+
+    <!-- The Realistic Pixel 6 Phone Body -->
+    <div class="pixel6-device">
+      
+      <!-- Inner Phone Screen -->
+      <div class="pixel6-screen is-mobile-view">
+        
+        <!-- Status Bar -->
+        <div class="pixel6-status-bar">
+          <span class="pixel6-clock">10:48</span>
+          <div class="pixel6-punch-hole"></div>
+          <div class="pixel6-status-icons">
+            <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+            <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4z"/></svg>
+            <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+          </div>
+        </div>
+
+        <!-- Mobile Page Content -->
+        <div class="app-container">
+          
+          <!-- Header -->
+          <header class="site-header">
+            <div class="header-badge">
+              <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+              <span>عائلة الحميدان</span>
+            </div>
+            <h1 class="site-title">إجتماع أسرة عائلة الحميدان</h1>
+            <p class="site-subtitle">البوابة الإلكترونية لتسجيل وحساب اشتراكات الأسرة</p>
+            
+            <!-- Event Card -->
+            <div class="event-info-card">
+              <div class="event-date-row">
+                <div class="event-date-badge">
+                  <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                  <span>الخميس ١٤٤٨/٥/٤ هـ</span>
+                </div>
+                <span class="event-blessing-pill">بمشيئة الله تعالى</span>
+              </div>
+
+              <div class="event-venue-banner">
+                <div class="venue-meta">
+                  <div class="venue-icon-circle">
+                    <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+                  </div>
+                  <div class="venue-details">
+                    <span class="venue-tag">المقر</span>
+                    <h3 class="venue-name">قاعة غناتي</h3>
+                  </div>
+                </div>
+                <a href="https://maps.app.goo.gl/ThDxkX43xCQwRuti7" target="_blank" rel="noopener" class="btn-map">
+                  <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  <span>الموقع</span>
+                  <span>↗</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Greeting Card -->
+            <div class="family-greeting-card">
+              <p>« عزوتي.. السلام عليكم ورحمة الله وبركاته.. وأقول: إليكم مقدار الاشتراك الجديد بعد إلغاء الاجتماع الرابع »</p>
+              <span class="sub-note">حدد عدد أفراد أسرتك لكل فئة لحساب الإجمالي بدقة والتسجيل في النظام.</span>
+            </div>
+          </header>
+
+          <!-- User Information & Security PIN Card -->
+          <section class="user-auth-card">
+            <div class="user-auth-header">
+              <h3 class="user-auth-title">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                بيانات المشترك ورب الأسرة
+              </h3>
+            </div>
+            
+            <div class="user-auth-grid">
+              <div class="auth-input-group">
+                <label>اسم المشترك / رب الأسرة *</label>
+                <input type="text" class="auth-input user-name-input" placeholder="مثال: صالح محمد الحميدان" autocomplete="name">
+              </div>
+              <div class="auth-input-group">
+                <label>رمز المرور الشخصي (PIN) *</label>
+                <input type="text" class="auth-input user-pin-input" placeholder="مثال: 1234" maxlength="10">
+              </div>
+              <div class="auth-input-group">
+                <label>رقم الجوال (اختياري)</label>
+                <input type="tel" class="auth-input user-phone-input" placeholder="05xxxxxxxx" dir="ltr">
+              </div>
+            </div>
+
+            <!-- Live Status Banner (shows if already registered) -->
+            <div class="registration-status-banner status-banner-target" style="display: none;"></div>
+          </section>
+
+          <!-- Main Calculator Section -->
+          <div class="calc-grid">
+            <main class="categories-list categories-list-target"></main>
+
+            <!-- Summary Sidebar -->
+            <aside class="summary-card">
+              <div class="summary-header">
+                <h3>
+                  <svg viewBox="0 0 24 24"><path d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.89 20.1 3 19 3M19 19H5V5H19V19M17 17H7V15H17V17M17 13H7V11H17V13M17 9H7V7H17V9Z"/></svg>
+                  ملخص الاشتراك
+                </h3>
+                <button type="button" class="btn-reset btn-reset-action">إعادة تعيين</button>
+              </div>
+
+              <!-- Breakdown List -->
+              <div class="breakdown-items-list breakdown-list-target">
+                <div class="breakdown-empty-hint">لم تقم بإضافة أفراد بعد</div>
+              </div>
+
+              <!-- Total Display -->
+              <div class="total-highlight-box">
+                <div class="total-caption">المبلغ الإجمالي المستحق</div>
+                <div class="total-amount-wrapper">
+                  <span class="total-amount-number grand-total-target">0</span>
+                  <span class="total-amount-currency">ريال</span>
+                </div>
+                <div class="attendees-pill total-members-target">إجمالي أفراد الأسرة: ٠ فرد</div>
+              </div>
+
+              <!-- Bank Transfer Card -->
+              <div class="bank-transfer-card">
+                <div class="bank-header">
+                  <svg viewBox="0 0 24 24"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>
+                  <span>بيانات الحساب البنكي للسداد</span>
+                </div>
+                <div class="bank-row">
+                  <span class="label">البنك:</span>
+                  <span class="val bank-name-val">مصرف الراجحي</span>
+                </div>
+                <div class="bank-row">
+                  <span class="label">اسم الحساب:</span>
+                  <span class="val account-name-val">صندوق عائلة الحميدان</span>
+                </div>
+                <div class="iban-box">
+                  <span class="iban-text iban-val" id="ibanValue">SA4480000204608010123456</span>
+                  <button type="button" class="btn-copy-iban btn-copy-iban-action">نسخ الآيبان</button>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="sidebar-actions">
+                <button type="button" class="btn-action btn-primary-submit btn-submit-action">
+                  <span>💾 تأكيد التسجيل وإرسال البيانات</span>
+                </button>
+                <button type="button" class="btn-action btn-whatsapp-share btn-whatsapp-action">
+                  <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.06 7.42C8.89 7.42 8.62 7.49 8.38 7.75C8.15 8.01 7.49 8.63 7.49 9.88C7.49 11.14 8.41 12.35 8.54 12.52C8.67 12.69 10.33 15.26 12.87 16.35C15 17.26 15.44 17.08 15.9 17.04C16.36 17 17.39 16.43 17.6 15.83C17.82 15.23 17.82 14.72 17.75 14.61C17.68 14.5 17.5 14.44 17.24 14.31C16.98 14.18 15.7 13.55 15.46 13.46C15.23 13.37 15.06 13.33 14.89 13.59C14.72 13.84 14.23 14.44 14.08 14.61C13.93 14.78 13.78 14.8 13.52 14.67C13.26 14.54 12.43 14.27 11.45 13.39C10.68 12.7 10.17 11.85 10.02 11.59C9.87 11.33 10 11.19 10.14 11.06C10.25 10.95 10.39 10.77 10.52 10.62C10.65 10.47 10.69 10.36 10.78 10.19C10.87 10.02 10.82 9.87 10.76 9.74C10.69 9.61 10.2 8.41 10 7.92C9.79 7.43 9.58 7.5 9.42 7.49C9.27 7.48 9.06 7.42 9.06 7.42Z"/></svg>
+                  <span>إرسال التفاصيل عبر واتساب</span>
+                </button>
+                <button type="button" class="btn-action btn-subtle btn-copy-action">
+                  <span>📋 نسخ التقرير كنص</span>
+                </button>
+              </div>
+            </aside>
+          </div>
+
+          <!-- Footer -->
+          <footer class="site-footer">
+            <p class="prayer-statement">« أسعدكم الله في الدنيا والآخرة، وبارك في أرزاقكم وأعماركم وأعمالكم »</p>
+            <div class="footer-credits">
+              <span>اشتراكات إجتماع عائلة الحميدان ١٤٤٨هـ</span>
+              <span>•</span>
+              <a href="admin.html" class="admin-portal-link">لوحة تحكم الإدارة (الأدمن) 🔒</a>
+            </div>
+          </footer>
+
+        </div>
+
+        <!-- Phone Home Indicator Bar -->
+        <div class="pixel6-home-indicator">
+          <div class="pixel6-home-bar"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       3. DESKTOP CONTAINER (عرض سطح المكتب الكامل)
+       ========================================================================= -->
+  <div id="desktopContainer" style="display: block;">
+    
+    <div class="app-container">
+      
+      <!-- Header -->
+      <header class="site-header">
+        <div class="header-badge">
+          <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          <span>عائلة الحميدان</span>
+        </div>
+        <h1 class="site-title">إجتماع أسرة عائلة الحميدان</h1>
+        <p class="site-subtitle">البوابة الإلكترونية الموحدة لحساب وتسجيل اشتراكات الأسرة المباركة</p>
+
+        <!-- Event Details Card -->
+        <div class="event-info-card">
+          <div class="event-date-row">
+            <div class="event-date-badge">
+              <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+              <span>يوم الخميس الموافق ١٤٤٨/٥/٤ هـ</span>
+            </div>
+            <span class="event-blessing-pill">بمشيئة الله تعالى</span>
+          </div>
+
+          <div class="event-venue-banner">
+            <div class="venue-meta">
+              <div class="venue-icon-circle">
+                <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+              </div>
+              <div class="venue-details">
+                <span class="venue-tag">مقر اللقاء</span>
+                <h3 class="venue-name">قاعة غناتي</h3>
+              </div>
+            </div>
+            <a href="https://maps.app.goo.gl/ThDxkX43xCQwRuti7" target="_blank" rel="noopener" class="btn-map">
+              <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              <span>للوصول إلى الموقع عبر خرائط Google</span>
+              <span>↗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Greeting Card -->
+        <div class="family-greeting-card">
+          <p>« عزوتي.. السلام عليكم ورحمة الله وبركاته.. وأقول: إليكم مقدار الاشتراك الجديد بعد إلغاء الاجتماع الرابع »</p>
+          <span class="sub-note">يمكنكم تحديد عدد الأفراد لكل فئة لحساب الإجمالي بدقة وتجهيز بيانات الأسرة للسداد والمتابعة.</span>
+        </div>
+      </header>
+
+      <!-- User Auth / Head of Household Registration -->
+      <section class="user-auth-card">
+        <div class="user-auth-header">
+          <h3 class="user-auth-title">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            بيانات المشترك ورب الأسرة للتسجيل والمتابعة
+          </h3>
+          <span style="font-size:0.8rem; color:var(--gray-500);">يتم حفظ تسجيلك ومتابعة السداد تلقائياً</span>
+        </div>
+        
+        <div class="user-auth-grid">
+          <div class="auth-input-group">
+            <label>اسم المشترك / رب الأسرة *</label>
+            <input type="text" class="auth-input user-name-input" placeholder="مثال: صالح بن محمد الحميدان" autocomplete="name">
+          </div>
+          <div class="auth-input-group">
+            <label>رمز المرور الشخصي (PIN) *</label>
+            <input type="text" class="auth-input user-pin-input" placeholder="مثال: 1234 (لحفظ ومتابعة تسجيلك)">
+          </div>
+          <div class="auth-input-group">
+            <label>رقم الجوال (اختياري)</label>
+            <input type="tel" class="auth-input user-phone-input" placeholder="05xxxxxxxx" dir="ltr">
+          </div>
+        </div>
+
+        <!-- Live Status Banner -->
+        <div class="registration-status-banner status-banner-target" style="display: none;"></div>
+      </section>
+
+      <!-- Main Calculator Grid -->
+      <div class="calc-grid">
+        
+        <!-- Left: Categories List -->
+        <main class="categories-list categories-list-target" id="categoriesDesktopContainer"></main>
+
+        <!-- Right: Summary Sidebar -->
+        <aside class="summary-card">
+          <div class="summary-header">
+            <h3>
+              <svg viewBox="0 0 24 24"><path d="M19 3H5C3.89 3 3 3.89 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.89 20.1 3 19 3M19 19H5V5H19V19M17 17H7V15H17V17M17 13H7V11H17V13M17 9H7V7H17V9Z"/></svg>
+              ملخص الاشتراك المالي
+            </h3>
+            <button type="button" class="btn-reset btn-reset-action">إعادة تعيين</button>
+          </div>
+
+          <!-- Breakdown List -->
+          <div class="breakdown-items-list breakdown-list-target">
+            <div class="breakdown-empty-hint">لم تقم بإضافة أفراد بعد، حدد عدد الأفراد لكل فئة</div>
+          </div>
+
+          <!-- Grand Total Box -->
+          <div class="total-highlight-box">
+            <div class="total-caption">المبلغ الإجمالي المستحق</div>
+            <div class="total-amount-wrapper">
+              <span class="total-amount-number grand-total-target">0</span>
+              <span class="total-amount-currency">ريال</span>
+            </div>
+            <div class="attendees-pill total-members-target">إجمالي أفراد الأسرة: ٠ فرد</div>
+          </div>
+
+          <!-- Bank Account Info -->
+          <div class="bank-transfer-card">
+            <div class="bank-header">
+              <svg viewBox="0 0 24 24"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>
+              <span>بيانات الحساب البنكي لتحويل الاشتراك</span>
+            </div>
+            <div class="bank-row">
+              <span class="label">البنك:</span>
+              <span class="val bank-name-val">مصرف الراجحي</span>
+            </div>
+            <div class="bank-row">
+              <span class="label">اسم الحساب:</span>
+              <span class="val account-name-val">صندوق عائلة الحميدان</span>
+            </div>
+            <div class="iban-box">
+              <span class="iban-text iban-val">SA4480000204608010123456</span>
+              <button type="button" class="btn-copy-iban btn-copy-iban-action">نسخ الآيبان</button>
+            </div>
+          </div>
+
+          <!-- Actions Group -->
+          <div class="sidebar-actions">
+            <button type="button" class="btn-action btn-primary-submit btn-submit-action">
+              <span>💾 تأكيد التسجيل وحفظ البيانات</span>
+            </button>
+            <button type="button" class="btn-action btn-whatsapp-share btn-whatsapp-action">
+              <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.06 7.42C8.89 7.42 8.62 7.49 8.38 7.75C8.15 8.01 7.49 8.63 7.49 9.88C7.49 11.14 8.41 12.35 8.54 12.52C8.67 12.69 10.33 15.26 12.87 16.35C15 17.26 15.44 17.08 15.9 17.04C16.36 17 17.39 16.43 17.6 15.83C17.82 15.23 17.82 14.72 17.75 14.61C17.68 14.5 17.5 14.44 17.24 14.31C16.98 14.18 15.7 13.55 15.46 13.46C15.23 13.37 15.06 13.33 14.89 13.59C14.72 13.84 14.23 14.44 14.08 14.61C13.93 14.78 13.78 14.8 13.52 14.67C13.26 14.54 12.43 14.27 11.45 13.39C10.68 12.7 10.17 11.85 10.02 11.59C9.87 11.33 10 11.19 10.14 11.06C10.25 10.95 10.39 10.77 10.52 10.62C10.65 10.47 10.69 10.36 10.78 10.19C10.87 10.02 10.82 9.87 10.76 9.74C10.69 9.61 10.2 8.41 10 7.92C9.79 7.43 9.58 7.5 9.42 7.49C9.27 7.48 9.06 7.42 9.06 7.42Z"/></svg>
+              <span>إرسال التفاصيل عبر واتساب</span>
+            </button>
+            <button type="button" class="btn-action btn-subtle btn-copy-action">
+              <span>📋 نسخ التقرير كنص</span>
+            </button>
+          </div>
+        </aside>
+
+      </div>
+
+      <!-- Footer -->
+      <footer class="site-footer">
+        <p class="prayer-statement">« أسعدكم الله في الدنيا والآخرة، وبارك في أرزاقكم وأعماركم وأعمالكم »</p>
+        <div class="footer-credits">
+          <span>إجتماع أسرة عائلة الحميدان المبارك ١٤٤٨هـ</span>
+          <span>•</span>
+          <a href="admin.html" class="admin-portal-link">بوابة إدارة الاجتماع (الأدمن) 🔒</a>
+        </div>
+      </footer>
+
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       4. CONFIRMATION SUCCESS MODAL (نافذة نجاح التسجيل والسداد)
+       ========================================================================= -->
+  <div class="modal-overlay" id="confirmationSuccessModal">
+    <div class="modal-card">
+      <div class="modal-icon-badge" style="background:var(--success-bg); color:var(--success);">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <h3 class="modal-title">تم تسجيل بيانات الأسرة بنجاح</h3>
+      <div class="modal-summary-content"></div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button type="button" class="btn-action btn-whatsapp-share btn-whatsapp-action">
+          <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.06 7.42C8.89 7.42 8.62 7.49 8.38 7.75C8.15 8.01 7.49 8.63 7.49 9.88C7.49 11.14 8.41 12.35 8.54 12.52C8.67 12.69 10.33 15.26 12.87 16.35C15 17.26 15.44 17.08 15.9 17.04C16.36 17 17.39 16.43 17.6 15.83C17.82 15.23 17.82 14.72 17.75 14.61C17.68 14.5 17.5 14.44 17.24 14.31C16.98 14.18 15.7 13.55 15.46 13.46C15.23 13.37 15.06 13.33 14.89 13.59C14.72 13.84 14.23 14.44 14.08 14.61C13.93 14.78 13.78 14.8 13.52 14.67C13.26 14.54 12.43 14.27 11.45 13.39C10.68 12.7 10.17 11.85 10.02 11.59C9.87 11.33 10 11.19 10.14 11.06C10.25 10.95 10.39 10.77 10.52 10.62C10.65 10.47 10.69 10.36 10.78 10.19C10.87 10.02 10.82 9.87 10.76 9.74C10.69 9.61 10.2 8.41 10 7.92C9.79 7.43 9.58 7.5 9.42 7.49C9.27 7.48 9.06 7.42 9.06 7.42Z"/></svg>
+          <span>إرسال إشعار السداد للمنسق عبر واتساب</span>
+        </button>
+        <button type="button" class="btn-action btn-subtle" onclick="document.getElementById('confirmationSuccessModal').classList.remove('active')">
+          إغلاق
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/visitor.js"></script>
+
+</body>
+</html>
