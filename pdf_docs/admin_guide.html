@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>دليل لوحة تحكم إدارة إجتماع عائلة الحميدان ١٤٤٨هـ</title>
+  <style>
+    @font-face {
+      font-family: 'ThmanyahSans';
+      src: url('../assets/fonts/thmanyahsans-regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSans';
+      src: url('../assets/fonts/thmanyahsans-medium.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSans';
+      src: url('../assets/fonts/thmanyahsans-bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSerif';
+      src: url('../assets/fonts/thmanyahserifdisplay-bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSerif';
+      src: url('../assets/fonts/thmanyahserifdisplay-black.woff2') format('woff2');
+      font-weight: 900;
+      font-style: normal;
+    }
+
+    :root {
+      --bg-cream: #FBF9F5;
+      --surface-white: #FFFFFF;
+      --beige-100: #F4EFE6;
+      --beige-200: #E6DCB8;
+      --gold-primary: #A38E65;
+      --gold-dark: #826E45;
+      --text-dark: #1C1815;
+      --text-muted: #5A534B;
+      --border-color: #E2DACB;
+      --accent-admin: #1E2329;
+      --accent-green: #2E7D32;
+      --accent-green-bg: #E8F5E9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'ThmanyahSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-cream);
+      color: var(--text-dark);
+      line-height: 1.6;
+      font-size: 13pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 14mm 14mm 14mm 14mm;
+    }
+
+    .page {
+      page-break-after: always;
+      position: relative;
+      min-height: 262mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-bottom: 4mm;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Document Header */
+    .doc-header {
+      border-bottom: 2px solid var(--gold-primary);
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .doc-header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .emblem-box {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-admin), #2c343f);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-primary);
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 22pt;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .doc-title-main {
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 17pt;
+      font-weight: 900;
+      color: var(--text-dark);
+      letter-spacing: -0.5px;
+    }
+
+    .doc-subtitle {
+      font-size: 10pt;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      background: var(--accent-admin);
+      color: #FFFFFF;
+      border: 1px solid var(--gold-primary);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 9pt;
+      font-weight: 700;
+    }
+
+    /* Step Card */
+    .step-card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 16px rgba(28, 24, 21, 0.04);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 10px;
+    }
+
+    .step-num-badge {
+      width: 38px;
+      height: 38px;
+      background: var(--gold-primary);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 14pt;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .step-title-wrap h2 {
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 15pt;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    .step-title-wrap p {
+      font-size: 9.5pt;
+      color: var(--text-muted);
+    }
+
+    /* Visual Layout */
+    .visual-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .screenshot-wrapper {
+      position: relative;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #111;
+      text-align: center;
+    }
+
+    .screenshot-wrapper img {
+      width: 100%;
+      height: auto;
+      max-height: 125mm;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Legend */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      background: var(--beige-100);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .pointer-badge {
+      width: 24px;
+      height: 24px;
+      background: var(--text-dark);
+      color: var(--gold-primary);
+      border: 1px solid var(--gold-primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 9.5pt;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .pointer-content {
+      font-size: 10.5pt;
+      color: var(--text-dark);
+    }
+
+    .pointer-content strong {
+      color: var(--gold-dark);
+      font-weight: 800;
+    }
+
+    .admin-note-box {
+      margin-top: 6px;
+      background: #EDF4FB;
+      border-right: 4px solid #1976D2;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 9.5pt;
+      color: #0D47A1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Footer */
+    .doc-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 8.5pt;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       PAGE 1: STEP 1 (ADMIN PIN LOGIN)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">🛡️</div>
+          <div>
+            <div class="doc-title-main">لوحة تحكم إدارة إجتماع عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الشامل للجنة المنظمة ومنسقي الصندوق المالي</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">الوصول السري المحمي</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">١</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الأولى: تسجيل دخول الإدارة السري</h2>
+            <p>حماية لوحة التحكم برمز PIN لمنع وصول الزوار العاديين إلى الكشوفات الشاملة</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/admin_shot1_pin.png" alt="نافذة تسجيل دخول الإدارة">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>حقل رمز المرور السري (PIN):</strong> يتم إدخال الرمز السري المعتمد للجنة وهو: <strong>(1448)</strong>.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>زر الدخول:</strong> يتحقق من صحة الرمز وينقلك مباشرة إلى لوحة المؤشرات المالية وجداول العوائل.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>زر «العودة لصفحة الزائر»:</strong> يتيح الانتقال السريع للمعاينة بصفة زائر في أي وقت.
+              </div>
+            </div>
+
+            <div class="admin-note-box">
+              <span>🔒</span>
+              <span><strong>أمان البيانات:</strong> رمز الإدارة مخصص لأعضاء اللجنة فقط، ولا يشارك مع عموم أفراد الأسرة لضمان خصوصية السجلات المالية.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>لوحة تحكم إدارة إجتماع عائلة الحميدان - دليل الإدارة</span>
+      <span>الصفحة ١ من ٥</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PAGE 2: STEP 2 (FINANCIAL KPI CARDS)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">📊</div>
+          <div>
+            <div class="doc-title-main">لوحة تحكم إدارة إجتماع عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الشامل للجنة المنظمة ومنسقي الصندوق المالي</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">المؤشرات المالية الحية</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">٢</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الثانية: لوحة المؤشرات المالية والإحصائية الحية</h2>
+            <p>متابعة الدخل الفعلي، الاشتراكات المتبقية، والمصروفات أولاً بأول بتحديث فوري</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/admin_shot2_kpis.png" alt="مؤشرات وإحصائيات الإدارة">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>إجمالي الأسر المسجلة والعدد المتوقع:</strong> يوضح عدد العوائل التي أكدت تسجيلها وإجمالي الحضور المتوقع في مقر الاجتماع.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>المحصل الفعلي والمتبقي:</strong> يعرض إجمالي المبالغ المحولة بنكياً والتي تم تأكيدها، مقارنة بالمبالغ التي لا تزال قيد التحويل.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>إجمالي المصروفات وصافي الصندوق:</strong> يرصد تكاليف القاعة والضيافة والعشاء ويحسب الفائض المالي المتبقي في الصندوق تلقائياً.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>لوحة تحكم إدارة إجتماع عائلة الحميدان - دليل الإدارة</span>
+      <span>الصفحة ٢ من ٥</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PAGE 3: STEP 3 (REGISTRATIONS TABLE & STATUS)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">📋</div>
+          <div>
+            <div class="doc-title-main">لوحة تحكم إدارة إجتماع عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الشامل للجنة المنظمة ومنسقي الصندوق المالي</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">إدارة العوائل والسداد</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">٣</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الثالثة: جدول كشف الأسر وسجل السداد الفوري</h2>
+            <p>تغيير حالة السداد بنقرة زر والتواصل المباشر مع أرباب الأسر عبر الواتساب</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/admin_shot3_table.png" alt="جدول تسجيلات الأسر">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>زر تبديل حالة السداد (ضغطة واحدة):</strong> بمجرد استلام إشعار التحويل البنكي، اضغط على زر الحالة ليتحول فورياً من <strong>«قيد الانتظار ⏳»</strong> إلى <strong>«تم السداد ✓»</strong> ويتحدث مباشرة عند رب الأسرة.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>زر «عرض التفاصيل»:</strong> يفتح نافذة تفصيلية بأسماء وتصنيفات أفراد أسرة المشترك (أب، أبناء موظفون، طلاب، بنات).
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>زر التواصل عبر الواتساب:</strong> يفتح محادثة واتساب فورية مع رب الأسرة برسالة شكر عند السداد أو تذكير لطيف بالموعد.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>لوحة تحكم إدارة إجتماع عائلة الحميدان - دليل الإدارة</span>
+      <span>الصفحة ٣ من ٥</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PAGE 4: STEP 4 (MEETING SETTINGS & GOOGLE MAPS)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">⚙️</div>
+          <div>
+            <div class="doc-title-main">لوحة تحكم إدارة إجتماع عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الشامل للجنة المنظمة ومنسقي الصندوق المالي</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">التحديث اللحظي لبيانات الاجتماع</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">٤</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الرابعة: تعديل موعد الاجتماع وموقع خرائط قوقل</h2>
+            <p>إمكانية تغيير التاريخ والموقع واسم القاعة لتتحدث سحابياً فوراً لدى جميع الزوار</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/admin_shot4_settings.png" alt="إعدادات موعد وموقع الاجتماع">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>حقل موعد الاجتماع:</strong> يمكنك تعديل اليوم والتاريخ (مثلاً: الخميس ٤ جمادى الأولى ١٤٤٨هـ).
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>اسم القاعة ورابط قوقل ماب:</strong> وضع رابط موقع مقر الاجتماع أو أي قاعة أخرى على Google Maps ليعمل زر "موقعي" مباشرة عند الأقارب.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>زر «حفظ ونشر التغييرات»:</strong> يحفظ التعديلات في قاعدة البيانات السحابية الحية لتظهر فوراً على شاشات الزوار دون الحاجة لتحديث الكود.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>لوحة تحكم إدارة إجتماع عائلة الحميدان - دليل الإدارة</span>
+      <span>الصفحة ٤ من ٥</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PAGE 5: STEP 5 (EXPENSES & EXCEL CSV EXPORT)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">📑</div>
+          <div>
+            <div class="doc-title-main">لوحة تحكم إدارة إجتماع عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الشامل للجنة المنظمة ومنسقي الصندوق المالي</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">المصروفات وتصدير التقارير</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">٥</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الخامسة: إدارة المصروفات وتصدير كشف Excel (CSV)</h2>
+            <p>توثيق نفقات القاعة والضيافة وتنزيل تقرير مالي كامل بضغطة زر واحدة</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/admin_shot5_expenses.png" alt="إدارة المصروفات وتصدير الكشوفات">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>نموذج إضافة مصروف جديد:</strong> قيد تكلفة حجز القاعة، الضيافة والقهوة، وجبة العشاء، والجوائز لتخصم آلياً من رصيد الصندوق.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>سجل المصروفات المعتمدة:</strong> جدول تفصيلي يعرض كل بند وقيمته مع إمكانية حذف أي بند عند التعديل.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>زر «تصدير Excel (CSV)»:</strong> موجود في أعلى الشريط العلوي، ويقوم فوراً بتحميل كشف كامل بكافة العوائل، المبالغ، وحالة السداد بصيغة ملف إكسل رسمي.
+              </div>
+            </div>
+
+            <div class="admin-note-box">
+              <span>🌟</span>
+              <span><strong>توثيق صندوق العائلة:</strong> يُحفظ ملف الإكسل كمرجع محاسبي رسمي وموثق لأعمال الصندوق وشفافية إيرادات ومصروفات الاجتماع المبارك.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>لوحة تحكم إدارة إجتماع عائلة الحميدان - دليل الإدارة</span>
+      <span>الصفحة ٥ من ٥</span>
+    </div>
+  </div>
+
+</body>
+</html>

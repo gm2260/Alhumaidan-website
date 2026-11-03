@@ -515,8 +515,8 @@ function generateShareText() {
   if (totalMembers === 0) return null;
 
   const meetingDate = currentSystemSettings.meetingDate || 'يوم الخميس ١٤٤٨/٥/٤ هـ بمشيئة الله';
-  const venue = currentSystemSettings.venue || 'قاعة غناتي';
-  const mapsUrl = currentSystemSettings.mapsUrl || 'https://maps.app.goo.gl/ThDxkX43xCQwRuti7';
+  const venue = currentSystemSettings.venue || 'سيتم تحديد المقر لاحقاً';
+  const mapsUrl = currentSystemSettings.mapsUrl || '#';
 
   let lines = [];
   lines.push('🌴 *إجتماع أسرة عائلة الحميدان* 🌴');
@@ -576,7 +576,7 @@ function shareWhatsApp() {
 
 // Copy IBAN
 function copyIban() {
-  const iban = document.getElementById('ibanValue')?.textContent || "SA4480000204608010123456";
+  const iban = document.getElementById('ibanValue')?.textContent || "SA0000000000000000000000";
   navigator.clipboard.writeText(iban.trim()).then(() => {
     showToast('✓ تم نسخ رقم الآيبان بنجاح');
   }).catch(() => {
@@ -617,9 +617,9 @@ function listenToSystemSettings() {
     currentSystemSettings = settings;
 
     // Bank Details
-    document.querySelectorAll('.bank-name-val').forEach(el => el.textContent = settings.bankName || 'مصرف الراجحي');
+    document.querySelectorAll('.bank-name-val').forEach(el => el.textContent = settings.bankName || 'اسم البنك');
     document.querySelectorAll('.account-name-val').forEach(el => el.textContent = settings.accountName || 'صندوق عائلة الحميدان');
-    document.querySelectorAll('.iban-val').forEach(el => el.textContent = settings.iban || 'SA4480000204608010123456');
+    document.querySelectorAll('.iban-val').forEach(el => el.textContent = settings.iban || 'SA0000000000000000000000');
 
     // Meeting Date
     if (settings.meetingDate) {

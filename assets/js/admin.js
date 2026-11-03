@@ -325,7 +325,7 @@ function viewRegistrationDetails(id) {
 function getWhatsAppTemplate(reg) {
   const isPaid = reg.status === 'paid';
   if (isPaid) {
-    return `أهلاً ومرحباً يا ${reg.name}،\nتم استلام سداد اشتراككم لاجتماع عائلة الحميدان بنجاح بمبلغ (${reg.totalAmount} ريال) لعدد (${reg.totalMembers} أفراد).\nنسعد بحضوركم ولقائكم بإذن الله في قاعة غناتي يوم الخميس ١٤٤٨/٥/٤ هـ.\nبارك الله فيكم.`;
+    return `أهلاً ومرحباً يا ${reg.name}،\nتم استلام سداد اشتراككم لاجتماع عائلة الحميدان بنجاح بمبلغ (${reg.totalAmount} ريال) لعدد (${reg.totalMembers} أفراد).\nنسعد بحضوركم ولقائكم بإذن الله في سيتم تحديد المقر لاحقاً يوم الخميس ١٤٤٨/٥/٤ هـ.\nبارك الله فيكم.`;
   } else {
     return `السلام عليكم ورحمة الله وبركاته يا ${reg.name}،\nنود تذكيركم بتفاصيل اشتراك اجتماع أسرة الحميدان:\nالمبلغ المطلوب: ${reg.totalAmount} ريال (${reg.totalMembers} أفراد).\nفضلاً تحويل المبلغ وإرسال الإشعار لتأكيد التسجيل في النظام.\nشاكرين ومقدرين لكم تعاونكم.`;
   }
@@ -421,11 +421,11 @@ function populateSettingsInputs() {
   const pin = document.getElementById('settingAdminPin');
 
   if (dateInput) dateInput.value = currentSettings.meetingDate || 'يوم الخميس الموافق ١٤٤٨/٥/٤ هـ';
-  if (venueInput) venueInput.value = currentSettings.venue || 'قاعة غناتي';
-  if (mapsInput) mapsInput.value = currentSettings.mapsUrl || 'https://maps.app.goo.gl/ThDxkX43xCQwRuti7';
-  if (bank) bank.value = currentSettings.bankName || 'مصرف الراجحي';
+  if (venueInput) venueInput.value = currentSettings.venue || 'سيتم تحديد المقر لاحقاً';
+  if (mapsInput) mapsInput.value = currentSettings.mapsUrl || '#';
+  if (bank) bank.value = currentSettings.bankName || 'اسم البنك';
   if (acc) acc.value = currentSettings.accountName || 'صندوق عائلة الحميدان';
-  if (iban) iban.value = currentSettings.iban || 'SA4480000204608010123456';
+  if (iban) iban.value = currentSettings.iban || 'SA0000000000000000000000';
   if (pin) pin.value = currentSettings.adminPin || '1448';
 }
 
@@ -433,11 +433,11 @@ async function handleSaveSettings(e) {
   e.preventDefault();
   const newSettings = {
     meetingDate: document.getElementById('settingMeetingDate')?.value.trim() || 'يوم الخميس الموافق ١٤٤٨/٥/٤ هـ',
-    venue: document.getElementById('settingVenueName')?.value.trim() || 'قاعة غناتي',
-    mapsUrl: document.getElementById('settingMapsUrl')?.value.trim() || 'https://maps.app.goo.gl/ThDxkX43xCQwRuti7',
-    bankName: document.getElementById('settingBankName')?.value.trim() || 'مصرف الراجحي',
+    venue: document.getElementById('settingVenueName')?.value.trim() || 'سيتم تحديد المقر لاحقاً',
+    mapsUrl: document.getElementById('settingMapsUrl')?.value.trim() || '#',
+    bankName: document.getElementById('settingBankName')?.value.trim() || 'اسم البنك',
     accountName: document.getElementById('settingAccountName')?.value.trim() || 'صندوق عائلة الحميدان',
-    iban: document.getElementById('settingIban')?.value.trim() || 'SA4480000204608010123456',
+    iban: document.getElementById('settingIban')?.value.trim() || 'SA0000000000000000000000',
     adminPin: document.getElementById('settingAdminPin')?.value.trim() || '1448'
   };
 

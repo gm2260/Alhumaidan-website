@@ -39,13 +39,13 @@ const LOCAL_EXPENSES_KEY = 'humaidan_local_expenses_v1';
 const LOCAL_SETTINGS_KEY = 'humaidan_local_settings_v1';
 
 const defaultSettings = {
-  bankName: "مصرف الراجحي",
+  bankName: "اسم البنك",
   accountName: "صندوق عائلة الحميدان",
-  iban: "SA4480000204608010123456",
+  iban: "SA0000000000000000000000",
   adminPin: "1448",
   meetingDate: "الخميس ١٤٤٨/٥/٤ هـ",
-  venue: "قاعة غناتي",
-  mapsUrl: "https://maps.app.goo.gl/ThDxkX43xCQwRuti7"
+  venue: "سيتم تحديد المقر لاحقاً",
+  mapsUrl: "#"
 };
 
 // ==========================================
@@ -286,7 +286,7 @@ function getLocalExpenses() {
   try {
     const raw = localStorage.getItem(LOCAL_EXPENSES_KEY);
     return raw ? JSON.parse(raw) : [
-      { id: 'exp_1', title: 'عربون حجز قاعة غناتي', amount: 3500, category: 'venue', date: '1448/04/15' },
+      { id: 'exp_1', title: 'عربون حجز المقر والتجهيزات', amount: 3500, category: 'venue', date: '1448/04/15' },
       { id: 'exp_2', title: 'الضيافة والقهوة والشاي والتمر', amount: 1200, category: 'hospitality', date: '1448/04/20' }
     ];
   } catch (e) {

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>دليل استخدام بوابة الزوار والأقارب - عائلة الحميدان ١٤٤٨هـ</title>
+  <style>
+    @font-face {
+      font-family: 'ThmanyahSans';
+      src: url('../assets/fonts/thmanyahsans-regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSans';
+      src: url('../assets/fonts/thmanyahsans-medium.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSans';
+      src: url('../assets/fonts/thmanyahsans-bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSerif';
+      src: url('../assets/fonts/thmanyahserifdisplay-bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'ThmanyahSerif';
+      src: url('../assets/fonts/thmanyahserifdisplay-black.woff2') format('woff2');
+      font-weight: 900;
+      font-style: normal;
+    }
+
+    :root {
+      --bg-cream: #FBF9F5;
+      --surface-white: #FFFFFF;
+      --beige-100: #F4EFE6;
+      --beige-200: #E6DCB8;
+      --gold-primary: #A38E65;
+      --gold-dark: #826E45;
+      --text-dark: #1C1815;
+      --text-muted: #5A534B;
+      --border-color: #E2DACB;
+      --accent-green: #2E7D32;
+      --accent-green-bg: #E8F5E9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'ThmanyahSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-cream);
+      color: var(--text-dark);
+      line-height: 1.6;
+      font-size: 13pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 15mm 15mm 15mm 15mm;
+    }
+
+    .page {
+      page-break-after: always;
+      position: relative;
+      min-height: 260mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-bottom: 5mm;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Document Header */
+    .doc-header {
+      border-bottom: 2px solid var(--gold-primary);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .doc-header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .emblem-box {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 22pt;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(163, 142, 101, 0.25);
+    }
+
+    .doc-title-main {
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 18pt;
+      font-weight: 900;
+      color: var(--text-dark);
+      letter-spacing: -0.5px;
+    }
+
+    .doc-subtitle {
+      font-size: 10pt;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .doc-header-left {
+      text-align: left;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      background: var(--beige-100);
+      color: var(--gold-dark);
+      border: 1px solid var(--gold-primary);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 9pt;
+      font-weight: 700;
+    }
+
+    /* Step Card */
+    .step-card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(28, 24, 21, 0.04);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 10px;
+    }
+
+    .step-num-badge {
+      width: 38px;
+      height: 38px;
+      background: var(--text-dark);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 14pt;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .step-title-wrap h2 {
+      font-family: 'ThmanyahSerif', serif;
+      font-size: 15pt;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    .step-title-wrap p {
+      font-size: 9.5pt;
+      color: var(--text-muted);
+    }
+
+    /* Visual Explanation Area */
+    .visual-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .screenshot-wrapper {
+      position: relative;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      text-align: center;
+    }
+
+    .screenshot-wrapper img {
+      width: 100%;
+      height: auto;
+      max-height: 120mm;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Pointers Legend */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      background: var(--beige-100);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .pointer-badge {
+      width: 24px;
+      height: 24px;
+      background: var(--gold-primary);
+      color: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 9.5pt;
+      flex-shrink: 0;
+      margin-top: 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .pointer-content {
+      font-size: 10.5pt;
+      color: var(--text-dark);
+    }
+
+    .pointer-content strong {
+      color: var(--gold-dark);
+      font-weight: 800;
+    }
+
+    .note-box {
+      margin-top: 6px;
+      background: #FFF9E6;
+      border-right: 4px solid var(--gold-primary);
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 9.5pt;
+      color: #6B5200;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .privacy-tag {
+      background: var(--accent-green-bg);
+      border-right: 4px solid var(--accent-green);
+      color: #1B5E20;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 9.5pt;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    /* Page Footer */
+    .doc-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 8.5pt;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       PAGE 1: COVER & STEP 1 (MODE SELECTION)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">ح</div>
+          <div>
+            <div class="doc-title-main">بوابة إجتماع أسرة عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الإرشادي الميسّر لزوار وأبناء الأسرة الكرام</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">الخميس ١٤٤٨/٥/٤هـ | اجتماع الأسرة</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">١</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الأولى: اختيار طريقة العرض التي تفضلها</h2>
+            <p>تظهر هذه النافذة فور فتح الرابط لتوفير تجربة تصفح مريحة سواء من الجوال أو الكمبيوتر</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/visitor_shot1_mode.png" alt="شاشة اختيار طريقة العرض">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>خيار «تصميم سطح المكتب»:</strong> يعرض البوابة بشاشة كاملة وموسعة ومثالية لأجهزة الكمبيوتر واللابتوب والآيباد.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>خيار «تصميم الجوال»:</strong> يعرض البوابة في مظهر هاتف ذكي أنيق وخفيف ومريح للمستخدمين المتصفحين من أجهزتهم المحمولة.
+              </div>
+            </div>
+
+            <div class="note-box">
+              <span>💡</span>
+              <span><strong>معلومة مهمة:</strong> يمكنك التبديل بين تصميم الجوال وتصميم سطح المكتب في أي وقت بنقرة واحدة من الزر العائم في أعلى الشاشة دون فقدان أي بيانات قمت بإدخالها.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>بوابة أسرة عائلة الحميدان الرسمية - دليل الزوار</span>
+      <span>الصفحة ١ من ٤</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PAGE 2: STEP 2 (VISITOR LOGIN & PRIVACY)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">ح</div>
+          <div>
+            <div class="doc-title-main">بوابة إجتماع أسرة عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الإرشادي الميسّر لزوار وأبناء الأسرة الكرام</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">حفظ الخصوصية والأمان</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">٢</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الثانية: تسجيل الدخول وحفظ خصوصية الأسرة</h2>
+            <p>نافذة سريعة تضمن عدم اطلاع أي شخص على تفاصيل تسجيل أفراد أسرتك أو مبلغ اشتراكك</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/visitor_shot2_login.png" alt="شاشة تسجيل دخول الزائر">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>اسم المشترك / رب الأسرة:</strong> اكتب اسمك الثلاثي (مثل: صالح بن محمد الحميدان) لتوثيق التسجيل في الكشف الرسمي.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>كلمة المرور / رمز PIN الخاص بك:</strong> ضع أي رمز سري خاص بك تحفظه (مثال: 1234)، حيث يمكنك العودة به لاحقاً لمتابعة حالة السداد.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>رقم الجوال (اختياري):</strong> لإرسال تأكيد الحضور والتواصل عند الحاجة.
+              </div>
+            </div>
+
+            <div class="privacy-tag">
+              <span>🔒</span>
+              <span><strong>ضمان الخصوصية التامة:</strong> بيانات أسرتك ومبلغ اشتراكك مشفرة بالكامل، ولا تظهر لأي قريب أو زائر آخر إطلاقاً، وتصل فقط للجنة الإدارة المنظمة.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>بوابة أسرة عائلة الحميدان الرسمية - دليل الزوار</span>
+      <span>الصفحة ٢ من ٤</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PAGE 3: STEP 3 & STEP 4 (OVERVIEW & CALCULATOR)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">ح</div>
+          <div>
+            <div class="doc-title-main">بوابة إجتماع أسرة عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الإرشادي الميسّر لزوار وأبناء الأسرة الكرام</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">حاسبة الاشتراك والاشتراكات المعتمدة</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">٣</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الثالثة: حاسبة الاشتراك واختيار أفراد الأسرة</h2>
+            <p>تحديد عدد الأبناء والبنات وحساب الاشتراك آلياً بدون أي عناء حسابي</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/visitor_shot4_calc.png" alt="حاسبة اشتراك الأسرة">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>عدادات الفئات الرسمية المعتمدة (+ و -):</strong> تضغط علامة (+) لزيادة عدد أفراد الأسرة في كل فئة، وعلامة (-) للتنقيص.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>الفئات السبع المعتمدة:</strong>
+                (رب الأسرة: ٥٠٠ ر.س | ابن موظف: ٥٠٠ ر.س | ابن غير موظف: ٢٥٠ ر.س | ابن طالب: ١٥٠ ر.س | المتقاعد/الأرملة: ٢٥٠ ر.س | بنت موظفة: ٢٥٠ ر.س | بنت غير موظفة: ١٠٠ ر.س).
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>الإجمالي المحسوب آلياً:</strong> يظهر المجموع الكلي النهائي للاشتراك فورياً في أسفل الحاسبة بشكل دقيق ومباشر.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>بوابة أسرة عائلة الحميدان الرسمية - دليل الزوار</span>
+      <span>الصفحة ٣ من ٤</span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       PAGE 4: STEP 5 (PAYMENT & CONFIRMATION)
+       ========================================== -->
+  <div class="page">
+    <div>
+      <div class="doc-header">
+        <div class="doc-header-right">
+          <div class="emblem-box">ح</div>
+          <div>
+            <div class="doc-title-main">بوابة إجتماع أسرة عائلة الحميدان ١٤٤٨هـ</div>
+            <div class="doc-subtitle">الدليل الإرشادي الميسّر لزوار وأبناء الأسرة الكرام</div>
+          </div>
+        </div>
+        <div class="doc-header-left">
+          <span class="badge-pill">التحويل البنكي والواتساب</span>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num-badge">٤</div>
+          <div class="step-title-wrap">
+            <h2>الخطوة الرابعة: التحويل البنكي وتأكيد الحضور عبر الواتساب</h2>
+            <p>نسخ الحساب البنكي بضغطة واحدة ومشاركة إشعار التحويل مع إدارة الاجتماع مباشرة</p>
+          </div>
+        </div>
+
+        <div class="visual-layout">
+          <div class="screenshot-wrapper">
+            <img src="assets/visitor_shot5_pay.png" alt="التحويل البنكي وتأكيد الحضور">
+          </div>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="pointer-badge">١</div>
+              <div class="pointer-content">
+                <strong>رقم الآيبان (IBAN) المعتمد:</strong> يظهر هنا رقم حساب الصندوق المعتمد من إدارة الاجتماع (موضح بأصفار كنموذج). اضغط زر «نسخ الآيبان» لنسخه ولصقه فوراً في تطبيق البنك.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٢</div>
+              <div class="pointer-content">
+                <strong>زر «تأكيد وإرسال الإشعار عبر الواتساب»:</strong> ينقلك مباشرة إلى تطبيق الواتساب برسالة مجهزة تلقائياً تتضمن اسمك والمبلغ المحسوب لإرفاق صورة التحويل للجنة المنظمة.
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <div class="pointer-badge">٣</div>
+              <div class="pointer-content">
+                <strong>زر خرائط قوقل وموقع المقر المعتمد:</strong> موجود في أعلى الصفحة ومربوط بالموقع الجغرافي المباشر لفتح مسار الوصول للقاعة بلمسة واحدة.
+              </div>
+            </div>
+
+            <div class="note-box">
+              <span>🤝</span>
+              <span><strong>حياكم الله جميعاً:</strong> نتطلع لحضوركم المشرف في اجتماع الأسرة المبارك ونسأل الله أن يديم الألفة والمحبة والاجتماع على الخير.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>بوابة أسرة عائلة الحميدان الرسمية - دليل الزوار</span>
+      <span>الصفحة ٤ من ٤</span>
+    </div>
+  </div>
+
+</body>
+</html>
