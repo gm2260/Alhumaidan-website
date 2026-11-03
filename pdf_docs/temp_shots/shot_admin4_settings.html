@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>body { margin:0; overflow:hidden; }</style>
+</head>
+<body>
+    <iframe id="frame" src="/admin.html" style="width:100vw; height:100vh; border:none;"></iframe>
+    <script>
+        const frame = document.getElementById('frame');
+        frame.onload = () => {
+            const win = frame.contentWindow;
+            const doc = frame.contentDocument;
+            doc.getElementById('adminAuthModal').classList.remove('active');
+            if (win.switchTab) win.switchTab('settings');
+            setTimeout(() => {
+                win.scrollTo(0, 100);
+            }, 300);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>body { margin:0; overflow:hidden; }</style>
+</head>
+<body>
+    <iframe id="frame" src="/admin.html" style="width:100vw; height:100vh; border:none;"></iframe>
+    <script>
+        const frame = document.getElementById('frame');
+        frame.onload = () => {
+            const win = frame.contentWindow;
+            const doc = frame.contentDocument;
+            doc.getElementById('adminAuthModal').classList.remove('active');
+            const sampleRegs = [
+              { id: 'reg_1', name: 'خالد محمد الحميدان', phone: '0501112233', totalMembers: 4, totalAmount: 500, paidAmount: 350, remainingAmount: 150, status: 'partial', adminNotes: 'تم سداد 350 ريال دفعة أولى' },
+              { id: 'reg_2', name: 'صالح عبدالله الحميدان', phone: '0505556677', totalMembers: 5, totalAmount: 650, paidAmount: 650, remainingAmount: 0, status: 'paid' },
+              { id: 'reg_3', name: 'فهد إبراهيم الحميدان', phone: '0559998811', totalMembers: 3, totalAmount: 350, paidAmount: 0, remainingAmount: 350, status: 'pending' }
+            ];
+            win.localStorage.setItem('humaidan_local_registrations_v1', JSON.stringify(sampleRegs));
+            if (win.allRegistrations) {
+              win.allRegistrations = sampleRegs;
+              if (win.updateFinancialStats) win.updateFinancialStats();
+              if (win.renderRegistrations) win.renderRegistrations();
+            }
+            win.scrollTo(0, 0);
+        };
+    </script>
+</body>
+</html>

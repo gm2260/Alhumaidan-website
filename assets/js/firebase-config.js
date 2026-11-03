@@ -43,7 +43,7 @@ const defaultSettings = {
   accountName: "صندوق عائلة الحميدان",
   iban: "SA0000000000000000000000",
   adminPin: "1448",
-  meetingDate: "الخميس ١٤٤٨/٥/٤ هـ",
+  meetingDate: "تاريخ الاجتماع: يحدد لاحقاً",
   venue: "سيتم تحديد المقر لاحقاً",
   mapsUrl: "#"
 };
@@ -142,13 +142,41 @@ function apiListenRegistrations(callback) {
 }
 
 /**
- * Toggle Payment Status: 'paid' <-> 'pending'
+ * Update Payment Status: 'paid' (كامل) | 'partial' (جزئي) | 'pending' (قيد الانتظار)
  */
-async function apiUpdatePaymentStatus(regId, newStatus, adminNotes = "") {
+async function apiUpdatePaymentStatus(regId, newStatus, paidAmount = null, adminNotes = "") {
+  const list = getLocalRegistrations();
+  const current = list.find(r => r.id === regId) || {};
+  const total = Number(current.totalAmount) || 0;
+
+  let finalPaid = 0;
+  let finalRemaining = total;
+
+  if (newStatus === 'paid') {
+    finalPaid = total;
+    finalRemaining = 0;
+  } else if (newStatus === 'partial') {
+    finalPaid = Math.max(0, Math.min(total, Number(paidAmount) || 0));
+    finalRemaining = Math.max(0, total - finalPaid);
+    if (finalPaid >= total && total > 0) {
+      newStatus = 'paid';
+      finalRemaining = 0;
+    } else if (finalPaid === 0) {
+      newStatus = 'pending';
+      finalRemaining = total;
+    }
+  } else {
+    newStatus = 'pending';
+    finalPaid = 0;
+    finalRemaining = total;
+  }
+
   const updatePayload = {
     status: newStatus,
-    paidAt: newStatus === 'paid' ? new Date().toISOString() : null,
-    adminNotes: adminNotes
+    paidAmount: finalPaid,
+    remainingAmount: finalRemaining,
+    paidAt: (newStatus === 'paid' || newStatus === 'partial') ? new Date().toISOString() : null,
+    adminNotes: adminNotes !== undefined ? adminNotes : (current.adminNotes || '')
   };
 
   if (isFirebaseReady && db) {
@@ -160,12 +188,12 @@ async function apiUpdatePaymentStatus(regId, newStatus, adminNotes = "") {
   }
 
   // Update local
-  const list = getLocalRegistrations();
   const idx = list.findIndex(r => r.id === regId);
   if (idx !== -1) {
     list[idx] = { ...list[idx], ...updatePayload };
     localStorage.setItem(LOCAL_REGISTRATIONS_KEY, JSON.stringify(list));
   }
+  return list[idx];
 }
 
 /**

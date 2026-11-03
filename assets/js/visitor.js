@@ -80,14 +80,30 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 
 function initDeviceMode() {
-  const modal = document.getElementById('deviceChoiceModal');
+  const isMobile = window.innerWidth <= 768;
+  const choiceModal = document.getElementById('deviceChoiceModal');
   const savedMode = localStorage.getItem('humaidan_device_mode');
 
-  if (!savedMode) {
-    // Open choice modal on first visit
-    if (modal) {
+  if (isMobile) {
+    applyDeviceMode('mobile');
+    if (choiceModal) choiceModal.classList.remove('active');
+    
+    // Open login modal directly on mobile if first time
+    const session = getStoredSession();
+    if (!session || !session.name) {
       setTimeout(() => {
-        modal.classList.add('active');
+        const loginModal = document.getElementById('visitorLoginModal');
+        if (loginModal) loginModal.classList.add('active');
+      }, 350);
+    }
+    return;
+  }
+
+  // Desktop Flow
+  if (!savedMode) {
+    if (choiceModal) {
+      setTimeout(() => {
+        choiceModal.classList.add('active');
       }, 300);
     }
   } else {
@@ -174,41 +190,43 @@ function openVisitorLoginModal() {
   }
 }
 
+function getStoredSession() {
+  try {
+    const raw = localStorage.getItem('humaidan_visitor_session');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function applyDeviceMode(mode) {
-  // Normalize mode
   const isMobile = (mode === 'mobile' || mode === 'pixel6');
   appState.deviceMode = isMobile ? 'mobile' : 'desktop';
   localStorage.setItem('humaidan_device_mode', appState.deviceMode);
 
-  const wrapper = document.getElementById('deviceWrapper');
-  const desktopContainer = document.getElementById('desktopContainer');
   const floatingBtn = document.getElementById('floatingViewToggle');
   const choiceModal = document.getElementById('deviceChoiceModal');
-
   if (choiceModal) choiceModal.classList.remove('active');
 
   if (isMobile) {
-    if (wrapper) wrapper.style.display = 'flex';
-    if (desktopContainer) desktopContainer.style.display = 'none';
+    document.body.classList.add('mode-mobile');
+    document.body.classList.remove('mode-desktop');
     if (floatingBtn) {
       floatingBtn.innerHTML = `
         <svg viewBox="0 0 24 24"><path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z"/></svg>
-        <span>التبديل إلى تصميم سطح المكتب</span>
+        <span>التبديل إلى سطح المكتب</span>
       `;
     }
   } else {
-    if (wrapper) wrapper.style.display = 'none';
-    if (desktopContainer) desktopContainer.style.display = 'block';
+    document.body.classList.add('mode-desktop');
+    document.body.classList.remove('mode-mobile');
     if (floatingBtn) {
       floatingBtn.innerHTML = `
         <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-        <span>التبديل إلى تصميم الجوال</span>
+        <span>التبديل إلى الجوال</span>
       `;
     }
   }
-
-  // Update clock on device
-  updatePixel6Clock();
 }
 
 function updatePixel6Clock() {
@@ -413,21 +431,36 @@ function showLiveStatusBanner(reg) {
   const banners = document.querySelectorAll('.status-banner-target');
   banners.forEach(b => {
     b.style.display = 'flex';
-    const isPaid = reg.status === 'paid';
+    const status = reg.status || 'pending';
+    const total = Number(reg.totalAmount) || 0;
+    const paid = status === 'paid' ? total : (Number(reg.paidAmount) || 0);
+    const remaining = status === 'paid' ? 0 : Math.max(0, total - paid);
+
+    let statusBadgeHtml = '';
+    let subDetailsHtml = '';
+
+    if (status === 'paid') {
+      statusBadgeHtml = `<span class="status-badge paid"><svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> تم السداد بالكامل ✓</span>`;
+      subDetailsHtml = `رقم التسجيل: ${reg.id.substring(0, 10)} • الإجمالي المسدد: <strong>${total.toLocaleString('en-US')} ريال</strong> (${reg.totalMembers} أفراد)`;
+    } else if (status === 'partial') {
+      statusBadgeHtml = `<span class="status-badge partial"><svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14v12c3.31 0 6-2.69 6-6s-2.69-6-6-6z"/></svg> سداد جزئي 🌓</span>`;
+      subDetailsHtml = `تم استلام: <strong style="color:var(--success);">${paid.toLocaleString('en-US')} ريال</strong> • المتبقي المطلوب تحويله: <strong style="color:#b45309;">${remaining.toLocaleString('en-US')} ريال</strong> (من إجمالي: ${total.toLocaleString('en-US')} ريال)`;
+    } else {
+      statusBadgeHtml = `<span class="status-badge pending"><svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> قيد المراجعة / بانتظار التحويل</span>`;
+      subDetailsHtml = `رقم التسجيل: ${reg.id.substring(0, 10)} • المبلغ المطلوب: <strong>${total.toLocaleString('en-US')} ريال</strong> (${reg.totalMembers} أفراد)`;
+    }
+
     b.innerHTML = `
       <div>
         <div style="font-weight: 700; font-size: 0.95rem; color: var(--gray-900);">
           مرحباً بك: ${reg.name}
         </div>
         <div style="font-size: 0.82rem; color: var(--gray-600); margin-top: 2px;">
-          رقم التسجيل: ${reg.id.substring(0, 10)} • الإجمالي المسجل: ${reg.totalAmount} ريال (${reg.totalMembers} أفراد)
+          ${subDetailsHtml}
         </div>
       </div>
       <div>
-        ${isPaid 
-          ? `<span class="status-badge paid"><svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> تم السداد والتحقق ✓</span>`
-          : `<span class="status-badge pending"><svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> قيد المراجعة / بانتظار التحويل</span>`
-        }
+        ${statusBadgeHtml}
       </div>
     `;
   });
@@ -455,6 +488,17 @@ async function handleRegistrationSubmit() {
     return;
   }
 
+  // Preserve existing payment info if already registered
+  let existingPaid = 0;
+  let currentStatus = appState.currentStatus || 'pending';
+  if (appState.currentRegistrationId) {
+    const existing = getLocalRegistrations().find(r => r.id === appState.currentRegistrationId);
+    if (existing) {
+      existingPaid = Number(existing.paidAmount) || 0;
+      currentStatus = existing.status || currentStatus;
+    }
+  }
+
   // Build registration payload
   const payload = {
     id: appState.currentRegistrationId || null,
@@ -465,7 +509,9 @@ async function handleRegistrationSubmit() {
     breakdown: breakdown,
     totalMembers: totalMembers,
     totalAmount: totalAmount,
-    status: appState.currentStatus || 'pending'
+    paidAmount: existingPaid,
+    remainingAmount: Math.max(0, totalAmount - existingPaid),
+    status: currentStatus
   };
 
   showToast('⏳ جاري تسجيل البيانات في النظام...');
@@ -514,7 +560,7 @@ function generateShareText() {
 
   if (totalMembers === 0) return null;
 
-  const meetingDate = currentSystemSettings.meetingDate || 'يوم الخميس ١٤٤٨/٥/٤ هـ بمشيئة الله';
+  const meetingDate = currentSystemSettings.meetingDate || 'تاريخ الاجتماع: يحدد لاحقاً';
   const venue = currentSystemSettings.venue || 'سيتم تحديد المقر لاحقاً';
   const mapsUrl = currentSystemSettings.mapsUrl || '#';
 

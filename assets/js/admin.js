@@ -129,7 +129,7 @@ function switchTab(tabId) {
   if (activePanel) activePanel.style.display = 'block';
 }
 
-// ==========================================
+/// ==========================================
 // Statistics & Financial Calculation
 // ==========================================
 
@@ -141,15 +141,19 @@ function updateFinancialStats() {
   let pendingAmount = 0;
 
   allRegistrations.forEach(r => {
-    const amount = Number(r.totalAmount) || 0;
+    const total = Number(r.totalAmount) || 0;
     const members = Number(r.totalMembers) || 0;
     totalAttendees += members;
-    totalTargetAmount += amount;
+    totalTargetAmount += total;
 
     if (r.status === 'paid') {
-      totalCollected += amount;
+      totalCollected += total;
+    } else if (r.status === 'partial') {
+      const paid = Math.max(0, Math.min(total, Number(r.paidAmount) || 0));
+      totalCollected += paid;
+      pendingAmount += Math.max(0, total - paid);
     } else {
-      pendingAmount += amount;
+      pendingAmount += total;
     }
   });
 
@@ -195,7 +199,8 @@ function renderRegistrations() {
   let filtered = allRegistrations.filter(r => {
     // Filter by status
     if (currentFilter === 'paid' && r.status !== 'paid') return false;
-    if (currentFilter === 'pending' && r.status === 'paid') return false;
+    if (currentFilter === 'partial' && r.status !== 'partial') return false;
+    if (currentFilter === 'pending' && (r.status === 'paid' || r.status === 'partial')) return false;
 
     // Search query
     if (searchQuery) {
@@ -218,13 +223,79 @@ function renderRegistrations() {
   }
 
   tbody.innerHTML = filtered.map((r, index) => {
-    const isPaid = r.status === 'paid';
+    const status = r.status || 'pending';
+    const total = Number(r.totalAmount) || 0;
+    const paid = status === 'paid' ? total : (Number(r.paidAmount) || 0);
+    const remaining = status === 'paid' ? 0 : Math.max(0, total - paid);
+
+    let amountHtml = '';
+    let statusBtnHtml = '';
+
+    if (status === 'paid') {
+      amountHtml = `
+        <div>
+          <strong style="font-size: 1.05rem; color: var(--gray-900);">${total.toLocaleString('en-US')} ريال</strong>
+          <div style="font-size: 0.78rem; color: var(--success); font-weight: 700; margin-top: 2px;">
+            ✓ مسدد بالكامل
+          </div>
+        </div>
+      `;
+      statusBtnHtml = `
+        <button type="button" 
+                class="status-toggle-btn paid"
+                onclick="openPaymentModal('${r.id}')"
+                title="انقر لتعديل السداد (كامل / جزئي)">
+          ✓ تم السداد بالكامل
+        </button>
+      `;
+    } else if (status === 'partial') {
+      amountHtml = `
+        <div>
+          <div style="font-size: 0.82rem; color: var(--gray-600);">المطلوب: <strong>${total.toLocaleString('en-US')} ر.س</strong></div>
+          <div style="display:flex; gap:8px; margin-top:3px; flex-wrap:wrap; font-size:0.82rem;">
+            <span style="color:var(--success); font-weight:700;">مدفوع: ${paid.toLocaleString('en-US')} ر.س</span>
+            <span style="color:#b45309; font-weight:700;">متبقي: ${remaining.toLocaleString('en-US')} ر.س</span>
+          </div>
+        </div>
+      `;
+      statusBtnHtml = `
+        <button type="button" 
+                class="status-toggle-btn partial"
+                onclick="openPaymentModal('${r.id}')"
+                title="انقر لتعديل السداد (كامل / جزئي)">
+          🌓 سداد جزئي (${paid.toLocaleString('en-US')} ر.س)
+        </button>
+      `;
+    } else {
+      amountHtml = `
+        <div>
+          <strong style="font-size: 1.05rem; color: var(--gray-900);">${total.toLocaleString('en-US')} ريال</strong>
+          <div style="font-size: 0.78rem; color: var(--warning); font-weight: 600; margin-top: 2px;">
+            ⏳ غير مسدد (متبقي: ${total.toLocaleString('en-US')} ر.س)
+          </div>
+        </div>
+      `;
+      statusBtnHtml = `
+        <button type="button" 
+                class="status-toggle-btn pending"
+                onclick="openPaymentModal('${r.id}')"
+                title="انقر لتحديد السداد (كامل / جزئي)">
+          ⏳ قيد الانتظار
+        </button>
+      `;
+    }
+
+    const noteBadge = r.adminNotes 
+      ? `<div style="font-size:0.75rem; color:var(--gray-600); margin-top:3px; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.adminNotes)}">📝 ${escapeHtml(r.adminNotes)}</div>`
+      : '';
+
     return `
       <tr>
         <td style="font-weight: 700;">${index + 1}</td>
         <td>
           <div style="font-weight: 700; color: var(--gray-900); font-size: 0.95rem;">${escapeHtml(r.name)}</div>
           <div style="font-size: 0.78rem; color: var(--gray-500);">${r.phone ? '📱 ' + escapeHtml(r.phone) : 'بدون رقم جوال'}</div>
+          ${noteBadge}
         </td>
         <td>
           <span style="font-weight: 600;">${r.totalMembers || 0} أفراد</span>
@@ -235,14 +306,10 @@ function renderRegistrations() {
           </button>
         </td>
         <td>
-          <strong style="font-size: 1.05rem; color: var(--gray-900);">${(r.totalAmount || 0).toLocaleString('en-US')} ريال</strong>
+          ${amountHtml}
         </td>
         <td>
-          <button type="button" 
-                  class="status-toggle-btn ${isPaid ? 'paid' : 'pending'}"
-                  onclick="toggleStatus('${r.id}', '${isPaid ? 'pending' : 'paid'}')">
-            ${isPaid ? '✓ تم السداد' : '⏳ قيد الانتظار'}
-          </button>
+          ${statusBtnHtml}
         </td>
         <td>
           <div style="display:flex; align-items:center; gap:6px;">
@@ -265,6 +332,186 @@ function renderRegistrations() {
       </tr>
     `;
   }).join('');
+}
+
+// ==========================================
+// Payment Status & Partial Payment Modal Logic
+// ==========================================
+
+let activeModalRegId = null;
+let activeModalPaymentOption = 'paid';
+
+function openPaymentModal(regId) {
+  const reg = allRegistrations.find(r => r.id === regId);
+  if (!reg) return;
+
+  activeModalRegId = regId;
+  const modal = document.getElementById('paymentModal');
+  if (!modal) return;
+
+  const total = Number(reg.totalAmount) || 0;
+  const currentStatus = reg.status || 'pending';
+  const currentPaid = currentStatus === 'paid' ? total : (Number(reg.paidAmount) || 0);
+  const currentRemaining = currentStatus === 'paid' ? 0 : Math.max(0, total - currentPaid);
+
+  // Summary box
+  const summaryBox = document.getElementById('modalPaySummaryBox');
+  if (summaryBox) {
+    summaryBox.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+        <div>
+          <h4 style="margin:0 0 4px 0; font-size:1.05rem; color:var(--gray-900); font-weight:700;">
+            👤 ${escapeHtml(reg.name)}
+          </h4>
+          <span style="font-size:0.82rem; color:var(--gray-600);">
+            عدد أفراد الأسرة: <strong>${reg.totalMembers || 0} أفراد</strong> ${reg.phone ? '• هاتف: ' + escapeHtml(reg.phone) : ''}
+          </span>
+        </div>
+        <div style="text-align:left;">
+          <div style="font-size:0.75rem; color:var(--gray-500);">إجمالي المطلوب</div>
+          <div style="font-size:1.25rem; font-weight:800; color:var(--gold-primary);">
+            ${total.toLocaleString('en-US')} ريال
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; font-size:0.82rem; border-top:1px dashed var(--border-light); padding-top:8px;">
+        <span>المدفوع حالياً: <strong style="color:var(--success);">${currentPaid.toLocaleString('en-US')} ريال</strong></span>
+        <span>المتبقي حالياً: <strong style="color:#b45309;">${currentRemaining.toLocaleString('en-US')} ريال</strong></span>
+      </div>
+    `;
+  }
+
+  // Pre-fill fields
+  const paidInput = document.getElementById('modalPaidAmountInput');
+  if (paidInput) {
+    paidInput.value = currentPaid > 0 ? currentPaid : Math.round(total / 2);
+  }
+
+  const notesInput = document.getElementById('modalAdminNotes');
+  if (notesInput) {
+    notesInput.value = reg.adminNotes || '';
+  }
+
+  // Generate quick percentage buttons
+  const quickContainer = document.getElementById('modalQuickAmounts');
+  if (quickContainer) {
+    const half = Math.round(total * 0.5);
+    const quarter = Math.round(total * 0.25);
+    const threeQuarters = Math.round(total * 0.75);
+    quickContainer.innerHTML = `
+      <span style="font-size:0.75rem; color:var(--gray-500); align-self:center;">مبالغ مقترحة:</span>
+      <button type="button" class="quick-pct-btn" onclick="setQuickModalAmount(${quarter})">25% (${quarter} ر.س)</button>
+      <button type="button" class="quick-pct-btn" onclick="setQuickModalAmount(${half})">50% (${half} ر.س)</button>
+      <button type="button" class="quick-pct-btn" onclick="setQuickModalAmount(${threeQuarters})">75% (${threeQuarters} ر.س)</button>
+    `;
+  }
+
+  // Set option
+  selectPayOption(currentStatus);
+  modal.classList.add('active');
+}
+
+function closePaymentModal() {
+  const modal = document.getElementById('paymentModal');
+  if (modal) modal.classList.remove('active');
+  activeModalRegId = null;
+}
+
+function selectPayOption(opt) {
+  activeModalPaymentOption = opt;
+
+  ['btnPayFull', 'btnPayPartial', 'btnPayPending'].forEach(id => {
+    document.getElementById(id)?.classList.remove('selected');
+  });
+
+  const partialSection = document.getElementById('partialAmountSection');
+
+  if (opt === 'paid') {
+    document.getElementById('btnPayFull')?.classList.add('selected');
+    if (partialSection) partialSection.style.display = 'none';
+  } else if (opt === 'partial') {
+    document.getElementById('btnPayPartial')?.classList.add('selected');
+    if (partialSection) partialSection.style.display = 'block';
+    handleModalPaidAmountInput();
+  } else {
+    document.getElementById('btnPayPending')?.classList.add('selected');
+    if (partialSection) partialSection.style.display = 'none';
+  }
+}
+
+function setQuickModalAmount(amount) {
+  const input = document.getElementById('modalPaidAmountInput');
+  if (input) {
+    input.value = amount;
+    handleModalPaidAmountInput();
+  }
+}
+
+function handleModalPaidAmountInput() {
+  if (!activeModalRegId) return;
+  const reg = allRegistrations.find(r => r.id === activeModalRegId);
+  if (!reg) return;
+
+  const total = Number(reg.totalAmount) || 0;
+  const paidInput = document.getElementById('modalPaidAmountInput');
+  const paidVal = Number(paidInput?.value) || 0;
+  const remaining = Math.max(0, total - paidVal);
+
+  const badge = document.getElementById('modalRemainingCalcBadge');
+  if (badge) {
+    badge.textContent = `المتبقي: ${remaining.toLocaleString('en-US')} ريال`;
+    if (remaining === 0) {
+      badge.style.background = 'var(--success-bg)';
+      badge.style.color = 'var(--success)';
+    } else {
+      badge.style.background = 'var(--warning-bg)';
+      badge.style.color = 'var(--warning)';
+    }
+  }
+}
+
+async function savePaymentModalChanges() {
+  if (!activeModalRegId) return;
+  const reg = allRegistrations.find(r => r.id === activeModalRegId);
+  if (!reg) return;
+
+  const total = Number(reg.totalAmount) || 0;
+  const notes = document.getElementById('modalAdminNotes')?.value.trim() || '';
+
+  let finalStatus = activeModalPaymentOption;
+  let finalPaid = 0;
+
+  if (finalStatus === 'paid') {
+    finalPaid = total;
+  } else if (finalStatus === 'partial') {
+    const inputVal = Number(document.getElementById('modalPaidAmountInput')?.value);
+    if (isNaN(inputVal) || inputVal <= 0) {
+      showAdminToast('⚠️ يرجى إدخال مبلغ سداد جزئي صحيح أكبر من صفر');
+      document.getElementById('modalPaidAmountInput')?.focus();
+      return;
+    }
+    if (inputVal >= total) {
+      finalStatus = 'paid';
+      finalPaid = total;
+    } else {
+      finalPaid = inputVal;
+    }
+  } else {
+    finalStatus = 'pending';
+    finalPaid = 0;
+  }
+
+  try {
+    await apiUpdatePaymentStatus(activeModalRegId, finalStatus, finalPaid, notes);
+    closePaymentModal();
+    const statusLabel = finalStatus === 'paid' 
+      ? 'تم السداد بالكامل ✓' 
+      : (finalStatus === 'partial' ? `سداد جزئي (${finalPaid} ر.س) 🌓` : 'قيد الانتظار ⏳');
+    showAdminToast(`✓ تم تحديث حالة ${escapeHtml(reg.name)} إلى: ${statusLabel}`);
+  } catch (err) {
+    console.error(err);
+    showAdminToast('حدث خطأ أثناء حفظ التغييرات');
+  }
 }
 
 async function toggleStatus(id, newStatus) {
@@ -323,11 +570,17 @@ function viewRegistrationDetails(id) {
 }
 
 function getWhatsAppTemplate(reg) {
-  const isPaid = reg.status === 'paid';
-  if (isPaid) {
-    return `أهلاً ومرحباً يا ${reg.name}،\nتم استلام سداد اشتراككم لاجتماع عائلة الحميدان بنجاح بمبلغ (${reg.totalAmount} ريال) لعدد (${reg.totalMembers} أفراد).\nنسعد بحضوركم ولقائكم بإذن الله في سيتم تحديد المقر لاحقاً يوم الخميس ١٤٤٨/٥/٤ هـ.\nبارك الله فيكم.`;
+  const status = reg.status || 'pending';
+  const total = Number(reg.totalAmount) || 0;
+  const paid = status === 'paid' ? total : (Number(reg.paidAmount) || 0);
+  const remaining = status === 'paid' ? 0 : Math.max(0, total - paid);
+
+  if (status === 'paid') {
+    return `أهلاً ومرحباً يا ${reg.name}،\nتم استلام سداد اشتراككم لاجتماع عائلة الحميدان بالكامل بنجاح بمبلغ (${total} ريال) لعدد (${reg.totalMembers || 0} أفراد).\nنسعد بحضوركم ولقائكم بإذن الله.\nبارك الله فيكم.`;
+  } else if (status === 'partial') {
+    return `السلام عليكم ورحمة الله وبركاته يا ${reg.name}،\nنود إشعاركم بأنه تم استلام سداد جزئي لاشتراككم لاجتماع أسرة الحميدان بمبلغ (${paid} ريال) من أصل إجمالي المطلوب (${total} ريال).\nالمبلغ المتبقي المطلوب سداده: (${remaining} ريال).\nشاكرين ومقدرين لكم تعاونكم.`;
   } else {
-    return `السلام عليكم ورحمة الله وبركاته يا ${reg.name}،\nنود تذكيركم بتفاصيل اشتراك اجتماع أسرة الحميدان:\nالمبلغ المطلوب: ${reg.totalAmount} ريال (${reg.totalMembers} أفراد).\nفضلاً تحويل المبلغ وإرسال الإشعار لتأكيد التسجيل في النظام.\nشاكرين ومقدرين لكم تعاونكم.`;
+    return `السلام عليكم ورحمة الله وبركاته يا ${reg.name}،\nنود تذكيركم بتفاصيل اشتراك اجتماع أسرة الحميدان:\nالمبلغ المطلوب: ${total} ريال (${reg.totalMembers || 0} أفراد).\nفضلاً تحويل المبلغ وإرسال الإشعار لتأكيد التسجيل في النظام.\nشاكرين ومقدرين لكم تعاونكم.`;
   }
 }
 
@@ -420,7 +673,7 @@ function populateSettingsInputs() {
   const iban = document.getElementById('settingIban');
   const pin = document.getElementById('settingAdminPin');
 
-  if (dateInput) dateInput.value = currentSettings.meetingDate || 'يوم الخميس الموافق ١٤٤٨/٥/٤ هـ';
+  if (dateInput) dateInput.value = currentSettings.meetingDate || 'تاريخ الاجتماع: يحدد لاحقاً';
   if (venueInput) venueInput.value = currentSettings.venue || 'سيتم تحديد المقر لاحقاً';
   if (mapsInput) mapsInput.value = currentSettings.mapsUrl || '#';
   if (bank) bank.value = currentSettings.bankName || 'اسم البنك';
@@ -432,7 +685,7 @@ function populateSettingsInputs() {
 async function handleSaveSettings(e) {
   e.preventDefault();
   const newSettings = {
-    meetingDate: document.getElementById('settingMeetingDate')?.value.trim() || 'يوم الخميس الموافق ١٤٤٨/٥/٤ هـ',
+    meetingDate: document.getElementById('settingMeetingDate')?.value.trim() || 'تاريخ الاجتماع: يحدد لاحقاً',
     venue: document.getElementById('settingVenueName')?.value.trim() || 'سيتم تحديد المقر لاحقاً',
     mapsUrl: document.getElementById('settingMapsUrl')?.value.trim() || '#',
     bankName: document.getElementById('settingBankName')?.value.trim() || 'اسم البنك',
@@ -456,16 +709,25 @@ function exportToCsv() {
   }
 
   let csvContent = '\uFEFF'; // UTF-8 BOM for Arabic support in Excel
-  csvContent += 'الرقم,اسم رب الأسرة,رقم الجوال,عدد الأفراد,المبلغ الإجمالي (ريال),حالة السداد,تاريخ التسجيل\n';
+  csvContent += 'الرقم,اسم رب الأسرة,رقم الجوال,عدد الأفراد,المبلغ المطلوب (ريال),المبلغ المدفوع (ريال),المبلغ المتبقي (ريال),حالة السداد,ملاحظات الإدارة,تاريخ التسجيل\n';
 
   allRegistrations.forEach((r, i) => {
+    const total = Number(r.totalAmount) || 0;
+    const status = r.status || 'pending';
+    const paid = status === 'paid' ? total : (Number(r.paidAmount) || 0);
+    const remaining = status === 'paid' ? 0 : Math.max(0, total - paid);
+    const statusLabel = status === 'paid' ? 'تم السداد بالكامل' : (status === 'partial' ? 'سداد جزئي' : 'قيد الانتظار');
+
     const row = [
       i + 1,
       `"${(r.name || '').replace(/"/g, '""')}"`,
       `"${r.phone || ''}"`,
       r.totalMembers || 0,
-      r.totalAmount || 0,
-      r.status === 'paid' ? 'تم السداد' : 'قيد الانتظار',
+      total,
+      paid,
+      remaining,
+      `"${statusLabel}"`,
+      `"${(r.adminNotes || '').replace(/"/g, '""')}"`,
       r.createdAt ? new Date(r.createdAt).toLocaleDateString('ar-SA') : ''
     ];
     csvContent += row.join(',') + '\n';

@@ -214,6 +214,17 @@ with open(os.path.join(TEMP_DIR, "shot_admin2_kpis.html"), "w", encoding="utf-8"
             const win = frame.contentWindow;
             const doc = frame.contentDocument;
             doc.getElementById('adminAuthModal').classList.remove('active');
+            const sampleRegs = [
+              { id: 'reg_1', name: 'خالد محمد الحميدان', phone: '0501112233', totalMembers: 4, totalAmount: 500, paidAmount: 350, remainingAmount: 150, status: 'partial', adminNotes: 'تم سداد 350 ريال دفعة أولى' },
+              { id: 'reg_2', name: 'صالح عبدالله الحميدان', phone: '0505556677', totalMembers: 5, totalAmount: 650, paidAmount: 650, remainingAmount: 0, status: 'paid' },
+              { id: 'reg_3', name: 'فهد إبراهيم الحميدان', phone: '0559998811', totalMembers: 3, totalAmount: 350, paidAmount: 0, remainingAmount: 350, status: 'pending' }
+            ];
+            win.localStorage.setItem('humaidan_local_registrations_v1', JSON.stringify(sampleRegs));
+            if (win.allRegistrations) {
+              win.allRegistrations = sampleRegs;
+              if (win.updateFinancialStats) win.updateFinancialStats();
+              if (win.renderRegistrations) win.renderRegistrations();
+            }
             win.scrollTo(0, 0);
         };
     </script>
@@ -236,10 +247,21 @@ with open(os.path.join(TEMP_DIR, "shot_admin3_table.html"), "w", encoding="utf-8
             const win = frame.contentWindow;
             const doc = frame.contentDocument;
             doc.getElementById('adminAuthModal').classList.remove('active');
+            const sampleRegs = [
+              { id: 'reg_1', name: 'خالد محمد الحميدان', phone: '0501112233', totalMembers: 4, totalAmount: 500, paidAmount: 350, remainingAmount: 150, status: 'partial', adminNotes: 'تم سداد 350 ريال دفعة أولى' },
+              { id: 'reg_2', name: 'صالح عبدالله الحميدان', phone: '0505556677', totalMembers: 5, totalAmount: 650, paidAmount: 650, remainingAmount: 0, status: 'paid' },
+              { id: 'reg_3', name: 'فهد إبراهيم الحميدان', phone: '0559998811', totalMembers: 3, totalAmount: 350, paidAmount: 0, remainingAmount: 350, status: 'pending' }
+            ];
+            win.localStorage.setItem('humaidan_local_registrations_v1', JSON.stringify(sampleRegs));
+            if (win.allRegistrations) {
+              win.allRegistrations = sampleRegs;
+              if (win.updateFinancialStats) win.updateFinancialStats();
+              if (win.renderRegistrations) win.renderRegistrations();
+            }
             setTimeout(() => {
                 const el = doc.querySelector('.admin-card-section');
                 if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
-            }, 400);
+            }, 300);
         };
     </script>
 </body>
@@ -261,7 +283,7 @@ with open(os.path.join(TEMP_DIR, "shot_admin4_settings.html"), "w", encoding="ut
             const win = frame.contentWindow;
             const doc = frame.contentDocument;
             doc.getElementById('adminAuthModal').classList.remove('active');
-            if (win.switchAdminTab) win.switchAdminTab('settings');
+            if (win.switchTab) win.switchTab('settings');
             setTimeout(() => {
                 win.scrollTo(0, 100);
             }, 300);
@@ -286,7 +308,7 @@ with open(os.path.join(TEMP_DIR, "shot_admin5_expenses.html"), "w", encoding="ut
             const win = frame.contentWindow;
             const doc = frame.contentDocument;
             doc.getElementById('adminAuthModal').classList.remove('active');
-            if (win.switchAdminTab) win.switchAdminTab('expenses');
+            if (win.switchTab) win.switchTab('expenses');
             setTimeout(() => {
                 win.scrollTo(0, 100);
             }, 300);
