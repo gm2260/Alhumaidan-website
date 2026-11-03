@@ -412,11 +412,17 @@ async function deleteExp(id) {
 // ==========================================
 
 function populateSettingsInputs() {
+  const dateInput = document.getElementById('settingMeetingDate');
+  const venueInput = document.getElementById('settingVenueName');
+  const mapsInput = document.getElementById('settingMapsUrl');
   const bank = document.getElementById('settingBankName');
   const acc = document.getElementById('settingAccountName');
   const iban = document.getElementById('settingIban');
   const pin = document.getElementById('settingAdminPin');
 
+  if (dateInput) dateInput.value = currentSettings.meetingDate || 'يوم الخميس الموافق ١٤٤٨/٥/٤ هـ';
+  if (venueInput) venueInput.value = currentSettings.venue || 'قاعة غناتي';
+  if (mapsInput) mapsInput.value = currentSettings.mapsUrl || 'https://maps.app.goo.gl/ThDxkX43xCQwRuti7';
   if (bank) bank.value = currentSettings.bankName || 'مصرف الراجحي';
   if (acc) acc.value = currentSettings.accountName || 'صندوق عائلة الحميدان';
   if (iban) iban.value = currentSettings.iban || 'SA4480000204608010123456';
@@ -426,16 +432,17 @@ function populateSettingsInputs() {
 async function handleSaveSettings(e) {
   e.preventDefault();
   const newSettings = {
+    meetingDate: document.getElementById('settingMeetingDate')?.value.trim() || 'يوم الخميس الموافق ١٤٤٨/٥/٤ هـ',
+    venue: document.getElementById('settingVenueName')?.value.trim() || 'قاعة غناتي',
+    mapsUrl: document.getElementById('settingMapsUrl')?.value.trim() || 'https://maps.app.goo.gl/ThDxkX43xCQwRuti7',
     bankName: document.getElementById('settingBankName')?.value.trim() || 'مصرف الراجحي',
     accountName: document.getElementById('settingAccountName')?.value.trim() || 'صندوق عائلة الحميدان',
     iban: document.getElementById('settingIban')?.value.trim() || 'SA4480000204608010123456',
-    adminPin: document.getElementById('settingAdminPin')?.value.trim() || '1448',
-    meetingDate: "الخميس ١٤٤٨/٥/٤ هـ",
-    venue: "قاعة غناتي"
+    adminPin: document.getElementById('settingAdminPin')?.value.trim() || '1448'
   };
 
   await apiUpdateSettings(newSettings);
-  showAdminToast('✓ تم حفظ إعدادات النظام بنجاح');
+  showAdminToast('✓ تم حفظ إعدادات الاجتماع وموقع قوقل ماب بنجاح');
 }
 
 // ==========================================

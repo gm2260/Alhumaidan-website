@@ -506,16 +506,23 @@ function openConfirmationModal(reg) {
   modal.classList.add('active');
 }
 
+let currentSystemSettings = {};
+
 function generateShareText() {
   const name = appState.name.trim() || 'رب الأسرة';
   const { totalAmount, totalMembers, breakdown } = updateSummary();
 
   if (totalMembers === 0) return null;
 
+  const meetingDate = currentSystemSettings.meetingDate || 'يوم الخميس ١٤٤٨/٥/٤ هـ بمشيئة الله';
+  const venue = currentSystemSettings.venue || 'قاعة غناتي';
+  const mapsUrl = currentSystemSettings.mapsUrl || 'https://maps.app.goo.gl/ThDxkX43xCQwRuti7';
+
   let lines = [];
   lines.push('🌴 *إجتماع أسرة عائلة الحميدان* 🌴');
-  lines.push('📅 موعد الاجتماع: يوم الخميس ١٤٤٨/٥/٤ هـ بمشيئة الله');
-  lines.push('📍 المكان: قاعة غناتي');
+  lines.push(`📅 موعد الاجتماع: ${meetingDate}`);
+  lines.push(`📍 المقر: ${venue}`);
+  lines.push(`🗺️ رابط الموقع: ${mapsUrl}`);
   lines.push('السلام عليكم ورحمة الله وبركاته');
   lines.push('─────────────────');
   lines.push(`👤 *المشترك:* ${name}`);
@@ -607,9 +614,29 @@ function resetAll() {
 function listenToSystemSettings() {
   apiListenSettings(settings => {
     if (!settings) return;
+    currentSystemSettings = settings;
+
+    // Bank Details
     document.querySelectorAll('.bank-name-val').forEach(el => el.textContent = settings.bankName || 'مصرف الراجحي');
     document.querySelectorAll('.account-name-val').forEach(el => el.textContent = settings.accountName || 'صندوق عائلة الحميدان');
     document.querySelectorAll('.iban-val').forEach(el => el.textContent = settings.iban || 'SA4480000204608010123456');
+
+    // Meeting Date
+    if (settings.meetingDate) {
+      document.querySelectorAll('.meeting-date-val').forEach(el => el.textContent = settings.meetingDate);
+    }
+
+    // Venue Name
+    if (settings.venue) {
+      document.querySelectorAll('.venue-name-val').forEach(el => el.textContent = settings.venue);
+    }
+
+    // Google Maps Link
+    if (settings.mapsUrl) {
+      document.querySelectorAll('.maps-link-val').forEach(el => {
+        el.setAttribute('href', settings.mapsUrl);
+      });
+    }
   });
 }
 
