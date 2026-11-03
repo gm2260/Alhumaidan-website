@@ -37,19 +37,22 @@ try {
 const LOCAL_REGISTRATIONS_KEY = 'humaidan_local_registrations_v1';
 const LOCAL_EXPENSES_KEY = 'humaidan_local_expenses_v1';
 const LOCAL_SETTINGS_KEY = 'humaidan_local_settings_v1';
+const LOCAL_MEETINGS_KEY = 'humaidan_local_meetings_v1';
+const LOCAL_FAMILY_HISTORY_KEY = 'humaidan_family_history_v1';
 
 const defaultSettings = {
   bankName: "اسم البنك",
   accountName: "صندوق عائلة الحميدان",
   iban: "SA0000000000000000000000",
   adminPin: "1448",
+  meetingTitle: "اجتماع أسرة عائلة الحميدان",
   meetingDate: "تاريخ الاجتماع: يحدد لاحقاً",
   venue: "سيتم تحديد المقر لاحقاً",
   mapsUrl: "#"
 };
 
 // ==========================================
-// Registrations API
+// Registrations & Family History API
 // ==========================================
 
 /**
@@ -77,20 +80,129 @@ async function apiSaveRegistration(registrationData) {
 
   // Also cache locally
   saveLocalRegistration(payload);
+  saveFamilyHistory(payload);
   return payload;
 }
 
 /**
- * Find registration by Name and PIN
+ * Save family profile structure across meetings
  */
-async function apiFindRegistration(name, pin) {
+function saveFamilyHistory(reg) {
+  try {
+    const raw = localStorage.getItem(LOCAL_FAMILY_HISTORY_KEY);
+    const history = raw ? JSON.parse(raw) : {};
+
+    const cleanPhone = (reg.phone || '').replace(/[^0-9]/g, '');
+    const cleanName = (reg.name || '').trim().toLowerCase();
+    const pin = (reg.pin || '').trim();
+
+    const record = {
+      name: reg.name,
+      phone: reg.phone || '',
+      pin: reg.pin || '',
+      counts: reg.counts || {},
+      totalMembers: reg.totalMembers || 0,
+      breakdown: reg.breakdown || [],
+      lastUpdated: new Date().toISOString()
+    };
+
+    if (cleanPhone) {
+      history['phone_' + cleanPhone] = record;
+    }
+    if (cleanName && pin) {
+      history['user_' + cleanName + '_' + pin] = record;
+    }
+    localStorage.setItem(LOCAL_FAMILY_HISTORY_KEY, JSON.stringify(history));
+
+    if (isFirebaseReady && db && cleanPhone) {
+      db.ref(`family_history/${cleanPhone}`).set(record).catch(() => {});
+    }
+  } catch (e) {
+    console.warn("Error saving family history:", e);
+  }
+}
+
+/**
+ * Find historical family counts by phone or name+pin
+ */
+async function apiFindFamilyHistory(name, pin, phone) {
+  const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
   const cleanName = (name || '').trim().toLowerCase();
   const cleanPin = (pin || '').trim();
 
-  // If no name or no pin provided, do not look up
-  if (!cleanName || !cleanPin) {
-    return null;
+  // Try local first
+  try {
+    const raw = localStorage.getItem(LOCAL_FAMILY_HISTORY_KEY);
+    if (raw) {
+      const history = JSON.parse(raw);
+      if (cleanPhone && history['phone_' + cleanPhone]) {
+        return history['phone_' + cleanPhone];
+      }
+      if (cleanName && cleanPin && history['user_' + cleanName + '_' + cleanPin]) {
+        return history['user_' + cleanName + '_' + cleanPin];
+      }
+      // search by phone in all entries
+      for (const k in history) {
+        const item = history[k];
+        if (cleanPhone && item.phone && item.phone.replace(/[^0-9]/g, '') === cleanPhone) {
+          return item;
+        }
+        if (cleanName && item.name && item.name.trim().toLowerCase() === cleanName) {
+          return item;
+        }
+      }
+    }
+  } catch (e) {}
+
+  // Also search through current registrations
+  const localList = getLocalRegistrations();
+  const found = localList.find(r => 
+    (cleanPhone && r.phone && r.phone.replace(/[^0-9]/g, '') === cleanPhone) ||
+    (cleanName && cleanPin && r.name && r.name.trim().toLowerCase() === cleanName && r.pin === cleanPin) ||
+    (cleanName && r.name && r.name.trim().toLowerCase() === cleanName)
+  );
+  if (found && found.counts && found.totalMembers > 0) {
+    return {
+      name: found.name,
+      phone: found.phone || '',
+      pin: found.pin || '',
+      counts: found.counts,
+      totalMembers: found.totalMembers,
+      breakdown: found.breakdown || []
+    };
   }
+
+  // Also search through archived meetings
+  const meetings = getLocalMeetings();
+  for (const m of meetings) {
+    if (m.archivedRegistrations && Array.isArray(m.archivedRegistrations)) {
+      const archFound = m.archivedRegistrations.find(r => 
+        (cleanPhone && r.phone && r.phone.replace(/[^0-9]/g, '') === cleanPhone) ||
+        (cleanName && r.name && r.name.trim().toLowerCase() === cleanName)
+      );
+      if (archFound && archFound.counts && archFound.totalMembers > 0) {
+        return {
+          name: archFound.name,
+          phone: archFound.phone || '',
+          pin: archFound.pin || '',
+          counts: archFound.counts,
+          totalMembers: archFound.totalMembers,
+          breakdown: archFound.breakdown || []
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Find registration by Name and PIN or Phone
+ */
+async function apiFindRegistration(name, pin, phone = "") {
+  const cleanName = (name || '').trim().toLowerCase();
+  const cleanPin = (pin || '').trim();
+  const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
 
   // Try Firebase first
   if (isFirebaseReady && db) {
@@ -100,7 +212,10 @@ async function apiFindRegistration(name, pin) {
       if (val) {
         for (const k in val) {
           const item = val[k];
-          if (item.name && item.name.trim().toLowerCase() === cleanName && item.pin === cleanPin) {
+          const itemPhone = (item.phone || '').replace(/[^0-9]/g, '');
+          const matchPhone = cleanPhone && itemPhone && itemPhone === cleanPhone;
+          const matchNamePin = cleanName && cleanPin && item.name && item.name.trim().toLowerCase() === cleanName && item.pin === cleanPin;
+          if (matchPhone || matchNamePin) {
             return item;
           }
         }
@@ -112,9 +227,12 @@ async function apiFindRegistration(name, pin) {
 
   // Fallback to local
   const localList = getLocalRegistrations();
-  return localList.find(i => 
-    i.name && i.name.trim().toLowerCase() === cleanName && i.pin === cleanPin
-  ) || null;
+  return localList.find(i => {
+    const itemPhone = (i.phone || '').replace(/[^0-9]/g, '');
+    const matchPhone = cleanPhone && itemPhone && itemPhone === cleanPhone;
+    const matchNamePin = cleanName && cleanPin && i.name && i.name.trim().toLowerCase() === cleanName && i.pin === cleanPin;
+    return matchPhone || matchNamePin;
+  }) || null;
 }
 
 /**
@@ -330,3 +448,249 @@ function getLocalSettings() {
     return defaultSettings;
   }
 }
+
+// ==========================================
+// Meetings & Archiving API (إدارة الاجتماعات والأرشفة)
+// ==========================================
+
+function getLocalMeetings() {
+  try {
+    const raw = localStorage.getItem(LOCAL_MEETINGS_KEY);
+    let list = raw ? JSON.parse(raw) : [];
+    if (!list || list.length === 0) {
+      const defMeeting = {
+        id: 'meeting_default',
+        title: 'اجتماع أسرة عائلة الحميدان القادم',
+        date: 'تاريخ الاجتماع: يحدد لاحقاً',
+        venue: 'سيتم تحديد المقر لاحقاً',
+        mapsUrl: '#',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        closedAt: null,
+        closeNotes: ''
+      };
+      list = [defMeeting];
+      localStorage.setItem(LOCAL_MEETINGS_KEY, JSON.stringify(list));
+    }
+    return list;
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalMeeting(meeting) {
+  const list = getLocalMeetings();
+  const idx = list.findIndex(m => m.id === meeting.id);
+  if (idx !== -1) list[idx] = meeting;
+  else list.unshift(meeting);
+  localStorage.setItem(LOCAL_MEETINGS_KEY, JSON.stringify(list));
+}
+
+function apiGetActiveMeeting() {
+  const meetings = getLocalMeetings();
+  return meetings.find(m => m.status === 'active') || meetings[0] || null;
+}
+
+function apiListenMeetings(callback) {
+  if (isFirebaseReady && db) {
+    db.ref('meetings').on('value', (snapshot) => {
+      const data = snapshot.val();
+      const list = data ? Object.values(data) : getLocalMeetings();
+      localStorage.setItem(LOCAL_MEETINGS_KEY, JSON.stringify(list));
+      callback(list);
+    }, () => {
+      callback(getLocalMeetings());
+    });
+  } else {
+    callback(getLocalMeetings());
+    window.addEventListener('storage', () => {
+      callback(getLocalMeetings());
+    });
+  }
+}
+
+/**
+ * Create a new meeting (with optional archive of current meeting)
+ */
+async function apiCreateNewMeeting(meetingData, archiveCurrent = true) {
+  const currentActive = apiGetActiveMeeting();
+  const timestamp = new Date().toISOString();
+
+  // If archiving current meeting:
+  if (archiveCurrent && currentActive && currentActive.status === 'active') {
+    await apiCloseCurrentMeeting(currentActive.id, 'تمت أرشفة الاجتماع تمهيداً لبدء اجتماع جديد');
+    
+    // Clear current registrations & expenses for the new meeting fresh start
+    if (isFirebaseReady && db) {
+      try {
+        await db.ref('registrations').remove();
+        await db.ref('expenses').remove();
+      } catch (e) {}
+    }
+    localStorage.setItem(LOCAL_REGISTRATIONS_KEY, JSON.stringify([]));
+    localStorage.setItem(LOCAL_EXPENSES_KEY, JSON.stringify([]));
+  }
+
+  const newId = 'meeting_' + Date.now();
+  const mDate = meetingData.meetingDate || meetingData.date || 'تاريخ يحدد لاحقاً';
+  const newMeeting = {
+    id: newId,
+    title: meetingData.title || 'اجتماع جديد لأسرة الحميدان',
+    meetingDate: mDate,
+    date: mDate,
+    venue: meetingData.venue || 'سيتم تحديد المقر لاحقاً',
+    mapsUrl: meetingData.mapsUrl || '#',
+    targetBudget: Number(meetingData.targetBudget) || 0,
+    status: 'active',
+    createdAt: timestamp,
+    closedAt: null,
+    closeNotes: '',
+    feedback: '',
+    adminNotes: meetingData.notes || ''
+  };
+
+  if (isFirebaseReady && db) {
+    try {
+      await db.ref(`meetings/${newId}`).set(newMeeting);
+    } catch (e) {}
+  }
+  saveLocalMeeting(newMeeting);
+
+  // Sync with global settings for visitor display
+  const settings = getLocalSettings();
+  const updatedSettings = {
+    ...settings,
+    meetingTitle: newMeeting.title,
+    meetingDate: newMeeting.meetingDate,
+    venue: newMeeting.venue,
+    mapsUrl: newMeeting.mapsUrl
+  };
+  await apiUpdateSettings(updatedSettings);
+
+  return newMeeting;
+}
+
+/**
+ * Close and finalize meeting, computing its final feedback report
+ */
+async function apiCloseCurrentMeeting(meetingIdOrFeedback, feedbackNotes = "") {
+  let meetingId = meetingIdOrFeedback;
+  let closeNotes = feedbackNotes;
+  
+  if (typeof meetingIdOrFeedback === 'string' && !meetingIdOrFeedback.startsWith('meeting_')) {
+    closeNotes = meetingIdOrFeedback;
+    meetingId = null;
+  }
+
+  const meetings = getLocalMeetings();
+  const meeting = (meetingId ? meetings.find(m => m.id === meetingId) : null) || apiGetActiveMeeting();
+  if (!meeting) return null;
+
+  const registrations = getLocalRegistrations();
+  const expenses = getLocalExpenses();
+
+  // Compute final financial stats
+  let totalAttendees = 0;
+  let totalTargetAmount = 0;
+  let totalCollected = 0;
+  let pendingAmount = 0;
+
+  registrations.forEach(r => {
+    const total = Number(r.totalAmount) || 0;
+    const members = Number(r.totalMembers) || 0;
+    totalAttendees += members;
+    totalTargetAmount += total;
+
+    if (r.status === 'paid') {
+      totalCollected += total;
+    } else if (r.status === 'partial') {
+      const paid = Math.max(0, Math.min(total, Number(r.paidAmount) || 0));
+      totalCollected += paid;
+      pendingAmount += Math.max(0, total - paid);
+    } else {
+      pendingAmount += total;
+    }
+  });
+
+  let totalExpenses = 0;
+  expenses.forEach(e => {
+    totalExpenses += (Number(e.amount) || 0);
+  });
+
+  const netBalance = totalCollected - totalExpenses;
+  const collectionRate = totalTargetAmount > 0 
+    ? Math.round((totalCollected / totalTargetAmount) * 100) 
+    : 0;
+
+  const summaryReport = {
+    closedDate: new Date().toLocaleDateString('ar-SA'),
+    closedTimestamp: new Date().toISOString(),
+    totalFamilies: registrations.length,
+    totalAttendees: totalAttendees,
+    totalTargetAmount: totalTargetAmount,
+    totalCollected: totalCollected,
+    pendingAmount: pendingAmount,
+    collectionRate: collectionRate,
+    totalExpenses: totalExpenses,
+    netBalance: netBalance,
+    closeNotes: closeNotes,
+    feedback: closeNotes,
+    // Snapshots:
+    expensesSnapshot: expenses,
+    registrationsSnapshot: registrations,
+    archivedRegistrations: registrations,
+    archivedExpenses: expenses
+  };
+
+  meeting.status = 'closed';
+  meeting.closedAt = new Date().toISOString();
+  meeting.closeNotes = closeNotes;
+  meeting.feedback = closeNotes;
+  meeting.summary = summaryReport;
+  meeting.summaryReport = summaryReport;
+  meeting.archivedRegistrations = registrations;
+  meeting.archivedExpenses = expenses;
+
+  if (isFirebaseReady && db) {
+    try {
+      await db.ref(`meetings/${meeting.id}`).set(meeting);
+    } catch (e) {}
+  }
+  saveLocalMeeting(meeting);
+
+  return meeting;
+}
+
+/**
+ * Re-open or set a meeting as active
+ */
+async function apiReopenMeeting(meetingId) {
+  const meetings = getLocalMeetings();
+  meetings.forEach(m => {
+    if (m.id === meetingId) {
+      m.status = 'active';
+      m.closedAt = null;
+    }
+  });
+  localStorage.setItem(LOCAL_MEETINGS_KEY, JSON.stringify(meetings));
+
+  const target = meetings.find(m => m.id === meetingId);
+  if (target) {
+    if (isFirebaseReady && db) {
+      try {
+        await db.ref(`meetings/${target.id}`).update({ status: 'active', closedAt: null });
+      } catch (e) {}
+    }
+    // Sync settings
+    const settings = getLocalSettings();
+    await apiUpdateSettings({
+      ...settings,
+      meetingTitle: target.title,
+      meetingDate: target.date,
+      venue: target.venue,
+      mapsUrl: target.mapsUrl
+    });
+  }
+  return target;
+}
+

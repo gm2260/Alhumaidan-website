@@ -2352,3 +2352,194 @@ body.mode-mobile .btn-action {
   0%, 100% { box-shadow: 0 0 0 0 rgba(184, 141, 72, 0.4); }
   50% { box-shadow: 0 0 0 8px rgba(184, 141, 72, 0); }
 }
+
+/* ==========================================================================
+   Visitor Account Logout & Switcher
+   ========================================================================== */
+.btn-visitor-logout {
+  background: rgba(198, 40, 40, 0.08);
+  border: 1px solid rgba(198, 40, 40, 0.28);
+  color: var(--danger);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-visitor-logout:hover {
+  background: var(--danger);
+  color: #ffffff;
+  border-color: var(--danger);
+  transform: translateY(-1px);
+}
+
+.restore-family-box {
+  background: var(--beige-50);
+  border: 2px dashed var(--gold-primary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin: 16px 0;
+  text-align: right;
+}
+
+/* ==========================================================================
+   Admin Meeting Lifecycle & Archive Styling
+   ========================================================================== */
+.meeting-lifecycle-bar {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 18px 24px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.active-meeting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meeting-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+.meeting-status-pill.active {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+}
+
+.meeting-status-pill.closed {
+  background: var(--gray-200);
+  color: var(--gray-700);
+  border: 1px solid var(--border-light);
+}
+
+.active-meeting-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.active-meeting-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  flex-wrap: wrap;
+}
+
+.meeting-lifecycle-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-meeting-action {
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+}
+
+.btn-new-meeting {
+  background: var(--gold-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-new-meeting:hover {
+  background: var(--gold-hover);
+  transform: translateY(-1px);
+}
+
+.btn-close-meeting {
+  background: var(--gray-900);
+  color: #ffffff;
+}
+
+.btn-close-meeting:hover {
+  background: #333333;
+  transform: translateY(-1px);
+}
+
+.archive-card {
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-xs);
+}
+
+.archive-card:hover {
+  border-color: var(--gold-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.archive-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.archive-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  background: var(--surface-card-subtle);
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.archive-stat-cell {
+  text-align: center;
+}
+
+.archive-stat-cell .lbl {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  display: block;
+}
+
+.archive-stat-cell .val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+

@@ -135,7 +135,10 @@ function selectDeviceAndOpenLogin(mode) {
   }
 }
 
-function submitVisitorModalLogin() {
+// Holds historical family data if found for restore prompt
+window.pendingFamilyHistory = null;
+
+async function submitVisitorModalLogin() {
   const nameInput = document.getElementById('modalVisitorName');
   const pinInput = document.getElementById('modalVisitorPin');
   const phoneInput = document.getElementById('modalVisitorPhone');
@@ -145,15 +148,27 @@ function submitVisitorModalLogin() {
   const phone = (phoneInput?.value || '').trim();
 
   if (!name) {
-    showToast('⚠️ يرجى إدخال اسم رب الأسرة');
+    showToast('⚠️ يرجى إدخال اسم المستخدم / رب الأسرة');
     nameInput?.focus();
     return;
   }
 
   if (!pin) {
-    showToast('⚠️ يرجى إدخال رمز المرور أو كلمة المرور الخاصة بك');
+    showToast('⚠️ يرجى إدخال كلمة المرور أو رمز PIN لحفظ حسابك');
     pinInput?.focus();
     return;
+  }
+
+  if (!phone) {
+    showToast('⚠️ يرجى إدخال رقم الجوال');
+    phoneInput?.focus();
+    return;
+  }
+
+  // Clear previous session if switching users
+  if (appState.name && appState.name !== name) {
+    appState.currentRegistrationId = null;
+    appState.currentStatus = null;
   }
 
   appState.name = name;
@@ -168,9 +183,133 @@ function submitVisitorModalLogin() {
   saveCurrentSession();
   closeVisitorLoginModal();
 
-  showToast(`✓ أهلاً بك يا ${name}! يمكنك الآن تحديد عدد أفراد أسرتك`);
-  checkExistingRegistrationStatus();
+  // 1. Check if user already registered in current meeting
+  const currentReg = await apiFindRegistration(name, pin);
+  if (currentReg) {
+    appState.currentRegistrationId = currentReg.id;
+    appState.currentStatus = currentReg.status;
+    if (currentReg.counts) {
+      Object.keys(currentReg.counts).forEach(k => {
+        if (appState.counts[k] !== undefined) appState.counts[k] = currentReg.counts[k];
+      });
+      renderCategories();
+      updateSummary();
+    }
+    showLiveStatusBanner(currentReg);
+    showToast(`✓ أهلاً بك يا ${name}! تم استرجاع تسجيلك في هذا الاجتماع.`);
+    return;
+  } else {
+    // New registration for current meeting: clear old ID so we don't overwrite another person's record
+    appState.currentRegistrationId = null;
+    appState.currentStatus = 'pending';
+    document.querySelectorAll('.status-banner-target').forEach(b => b.style.display = 'none');
+  }
+
+  // 2. Check if user has historical family record from previous meetings
+  const history = await apiFindFamilyHistory(name, pin, phone);
+  if (history && history.counts && history.totalMembers > 0) {
+    promptRestoreFamilyModal(history);
+  } else {
+    showToast(`✓ أهلاً بك يا ${name}! يمكنك الآن تحديد عدد أفراد أسرتك.`);
+  }
 }
+
+function promptRestoreFamilyModal(history) {
+  window.pendingFamilyHistory = history;
+  const modal = document.getElementById('restoreFamilyModal');
+  const userEl = document.getElementById('restoreFamilyUserName');
+  const box = document.getElementById('restoreFamilySummaryBox');
+
+  if (userEl) userEl.textContent = history.name || appState.name;
+
+  if (box && history.breakdown) {
+    let itemsHtml = history.breakdown.map(b => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px dashed var(--beige-300);">
+        <span style="font-weight:600; color:var(--gray-800);">${b.title}</span>
+        <span style="background:var(--gold-bg); color:var(--gold-primary); font-weight:700; padding:2px 10px; border-radius:6px; font-size:0.85rem;">${b.count} فرد</span>
+      </div>
+    `).join('');
+
+    box.innerHTML = `
+      <div style="font-size:0.88rem; font-weight:700; color:var(--gray-800); margin-bottom:8px;">
+        📋 تفاصيل أفراد الأسرة في السجل السابق (${history.totalMembers} فرد):
+      </div>
+      <div style="display:flex; flex-direction:column; gap:3px; max-height:160px; overflow-y:auto;">
+        ${itemsHtml}
+      </div>
+      <div style="font-size:0.78rem; color:var(--gray-500); margin-top:8px;">
+        * عند الاسترداد ستُعبأ الأعداد تلقائياً ويمكنك تعديلها في أي وقت قبل إرسال التسجيل.
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+window.applyRestoredFamily = function() {
+  const history = window.pendingFamilyHistory;
+  if (history && history.counts) {
+    categories.forEach(c => {
+      appState.counts[c.id] = Number(history.counts[c.id]) || 0;
+    });
+    renderCategories();
+    updateSummary();
+    saveCurrentSession();
+    showToast('✓ تم استرداد أفراد أسرتك بنجاح! راجع الأعداد ثم اعتمد التسجيل.');
+  }
+  const modal = document.getElementById('restoreFamilyModal');
+  if (modal) modal.classList.remove('active');
+  window.pendingFamilyHistory = null;
+};
+
+window.declineRestoredFamily = function() {
+  const modal = document.getElementById('restoreFamilyModal');
+  if (modal) modal.classList.remove('active');
+  window.pendingFamilyHistory = null;
+  categories.forEach(c => appState.counts[c.id] = 0);
+  appState.counts['father'] = 1;
+  renderCategories();
+  updateSummary();
+  saveCurrentSession();
+  showToast('تم بدء تسجيل جديد فارغ.');
+};
+
+window.visitorLogout = function() {
+  const confirmMsg = 'هل ترغب بالتأكيد في تسجيل الخروج؟\nيتيح لك ذلك تسجيل شخص آخر أو عائلة أخرى من نفس الجوال بحساب ورقم تسجيل مستقل تماماً.';
+  if (confirm(confirmMsg)) {
+    appState.name = '';
+    appState.pin = '';
+    appState.phone = '';
+    appState.currentRegistrationId = null;
+    appState.currentStatus = null;
+    categories.forEach(c => appState.counts[c.id] = 0);
+    appState.counts['father'] = 1;
+
+    localStorage.removeItem('humaidan_visitor_session');
+
+    document.querySelectorAll('.user-name-input').forEach(i => i.value = '');
+    document.querySelectorAll('.user-pin-input').forEach(i => i.value = '');
+    document.querySelectorAll('.user-phone-input').forEach(i => i.value = '');
+    document.querySelectorAll('.status-banner-target').forEach(b => b.style.display = 'none');
+
+    const nameInput = document.getElementById('modalVisitorName');
+    const pinInput = document.getElementById('modalVisitorPin');
+    const phoneInput = document.getElementById('modalVisitorPhone');
+    if (nameInput) nameInput.value = '';
+    if (pinInput) pinInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+
+    renderCategories();
+    updateSummary();
+
+    showToast('🚪 تم تسجيل الخروج بنجاح. يمكنك الآن تسجيل بيانات شخص أو عائلة أخرى.');
+
+    setTimeout(() => {
+      const loginModal = document.getElementById('visitorLoginModal');
+      if (loginModal) loginModal.classList.add('active');
+    }, 300);
+  }
+};
 
 function closeVisitorLoginModal() {
   const loginModal = document.getElementById('visitorLoginModal');
@@ -488,14 +627,23 @@ async function handleRegistrationSubmit() {
     return;
   }
 
-  // Preserve existing payment info if already registered
+  // Ensure we don't accidentally overwrite someone else's registration on the same device
   let existingPaid = 0;
   let currentStatus = appState.currentStatus || 'pending';
   if (appState.currentRegistrationId) {
     const existing = getLocalRegistrations().find(r => r.id === appState.currentRegistrationId);
     if (existing) {
-      existingPaid = Number(existing.paidAmount) || 0;
-      currentStatus = existing.status || currentStatus;
+      if (existing.name && existing.name.trim() !== name) {
+        // Name changed! This is a different person registering from this phone: generate new record
+        appState.currentRegistrationId = null;
+        currentStatus = 'pending';
+        existingPaid = 0;
+      } else {
+        existingPaid = Number(existing.paidAmount) || 0;
+        currentStatus = existing.status || currentStatus;
+      }
+    } else {
+      appState.currentRegistrationId = null;
     }
   }
 
@@ -521,6 +669,10 @@ async function handleRegistrationSubmit() {
     appState.currentRegistrationId = saved.id;
     appState.currentStatus = saved.status;
     saveCurrentSession();
+    
+    // Save to historical family repository for next meetings
+    saveFamilyHistory(payload);
+
     showLiveStatusBanner(saved);
 
     showToast('✓ تم تسجيل بيانات أسرتكم بنجاح!');

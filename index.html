@@ -31,10 +31,8 @@
        ========================================================================= -->
   <div class="modal-overlay" id="deviceChoiceModal">
     <div class="modal-card">
-      <div class="modal-icon-badge">
-        <svg viewBox="0 0 24 24">
-          <path d="M4 6h16v10H4zm16-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h6v2H8v2h8v-2h-2v-2h6c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/>
-        </svg>
+      <div style="text-align: center; margin-bottom: 14px;">
+        <img src="assets/img/family_logo_card.png" alt="شعار عائلة الحميدان" style="max-height: 65px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
       </div>
       <h2 class="modal-title">مرحباً بكم في بوابة عائلة الحميدان</h2>
       <p class="modal-desc">يسرنا حضوركم لاجتماع الأسرة المبارك. يرجى اختيار وضع العرض المفضل لديكم:</p>
@@ -64,42 +62,71 @@
   </div>
 
   <!-- =========================================================================
-       POPUP 2: VISITOR LOGIN / REGISTRATION MODAL (شاشة دخول الزائر)
+       POPUP 2: VISITOR LOGIN / REGISTRATION MODAL (شاشة دخول الزائر وإنشاء الحساب)
        ========================================================================= -->
   <div class="modal-overlay" id="visitorLoginModal">
-    <div class="modal-card" style="max-width: 460px;">
-      <div class="modal-icon-badge">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-        </svg>
+    <div class="modal-card" style="max-width: 480px;">
+      <div style="text-align: center; margin-bottom: 12px;">
+        <img src="assets/img/family_logo_card.png" alt="شعار عائلة الحميدان" style="max-height: 55px; object-fit: contain; border-radius: 6px;">
       </div>
-      <h3 class="modal-title">تسجيل دخول المشترك / رب الأسرة</h3>
-      <p class="modal-desc">فضلاً أدخل اسمك وكلمة المرور لحفظ بيانات أسرتك ومتابعة السداد تلقائياً:</p>
+      <h3 class="modal-title">تسجيل الدخول أو إنشاء حساب جديد</h3>
+      <p class="modal-desc">أهلاً بك في بوابة عائلة الحميدان! أنشئ حسابك أو سجل دخولك باسم المستخدم وكلمة المرور / رمز PIN ورقم الجوال لحفظ ومتابعة اشتراكات أسرتك:</p>
 
       <form onsubmit="event.preventDefault(); submitVisitorModalLogin();" style="display:flex; flex-direction:column; gap:14px; text-align:right;">
         <div class="auth-input-group">
-          <label>اسم المشترك / رب الأسرة *</label>
+          <label>اسم المستخدم / رب الأسرة *</label>
           <input type="text" id="modalVisitorName" class="auth-input" placeholder="مثال: صالح بن محمد الحميدان" required autocomplete="name">
         </div>
 
         <div class="auth-input-group">
-          <label>كلمة المرور / رمز PIN الخاص بك *</label>
-          <input type="text" id="modalVisitorPin" class="auth-input" placeholder="مثال: 1234 (لحفظ ومتابعة تسجيلك)" required maxlength="12">
+          <label>كلمة المرور أو رمز PIN الخاص بك *</label>
+          <input type="text" id="modalVisitorPin" class="auth-input" placeholder="مثال: 1234 أو كلمة سر لحماية حسابك" required maxlength="20">
         </div>
 
         <div class="auth-input-group">
-          <label>رقم الجوال (اختياري)</label>
-          <input type="tel" id="modalVisitorPhone" class="auth-input" placeholder="05xxxxxxxx" dir="ltr">
+          <label>رقم الجوال *</label>
+          <input type="tel" id="modalVisitorPhone" class="auth-input" placeholder="05xxxxxxxx" required dir="ltr">
         </div>
 
         <button type="submit" class="btn-action btn-primary-submit" style="margin-top:6px;">
-          دخول إلى الحاسبة والتسجيل
+          دخول / متابعة إلى الحاسبة والتسجيل
         </button>
 
         <button type="button" class="btn-action btn-subtle" onclick="closeVisitorLoginModal()">
           المتابعة كزائر دون تسجيل مسبق
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       POPUP 3: RESTORE HISTORICAL FAMILY RECORD MODAL (استرداد السجل العائلي السابق)
+       ========================================================================= -->
+  <div class="modal-overlay" id="restoreFamilyModal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-icon-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3);">
+        <svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:currentColor;">
+          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
+      </div>
+      <h3 class="modal-title">استرداد سجل أفراد العائلة</h3>
+      <p class="modal-desc" style="line-height:1.6;">
+        أهلاً بك يا <strong id="restoreFamilyUserName" style="color:var(--gold-secondary);"></strong>!
+        تم العثور على سجل سابق معتمد لأفراد عائلتك الكريمة. هل ترغب في استرداد نفس الفئات والأعداد تلقائياً لاجتماع اليوم لتوفير وقتك؟
+      </p>
+
+      <div class="restore-family-box" id="restoreFamilySummaryBox">
+        <!-- Rendered dynamically in visitor.js -->
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+        <button type="button" class="btn-action btn-primary-submit" onclick="applyRestoredFamily()" style="background:linear-gradient(135deg, #10b981, #059669); border-color:#059669; box-shadow:0 4px 14px rgba(16,185,129,0.3);">
+          ✓ نعم، استرداد بيانات عائلتي
+        </button>
+        <button type="button" class="btn-action btn-subtle" onclick="declineRestoredFamily()">
+          تحديد أفراد جدد من البداية
+        </button>
+      </div>
     </div>
   </div>
 
@@ -126,6 +153,9 @@
         
         <!-- Header -->
         <header class="site-header">
+          <div class="header-logo-wrap" style="text-align: center; margin-bottom: 12px;">
+            <img src="assets/img/family_logo_gold.png" alt="شعار عائلة الحميدان" style="max-height: 72px; width: auto; object-fit: contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.25));">
+          </div>
           <div class="header-badge">
             <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
             <span>عائلة الحميدان</span>
@@ -171,11 +201,17 @@
         <!-- User Information & Security PIN Card -->
         <section class="user-auth-card">
           <div class="user-auth-header">
-            <h3 class="user-auth-title">
-              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              بيانات المشترك ورب الأسرة
-            </h3>
-            <span style="font-size:0.8rem; color:var(--gray-500);">يتم حفظ تسجيلك ومتابعة السداد تلقائياً</span>
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <h3 class="user-auth-title" style="margin:0;">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                بيانات المشترك ورب الأسرة
+              </h3>
+              <span style="font-size:0.8rem; color:var(--gray-500);">يتم حفظ تسجيلك ومتابعة السداد تلقائياً</span>
+            </div>
+            <button type="button" class="btn-visitor-logout" onclick="visitorLogout()" title="تسجيل الخروج لتسجيل شخص آخر من نفس الجوال">
+              <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              <span>تسجيل خروج / تبديل الحساب</span>
+            </button>
           </div>
           
           <div class="user-auth-grid">
@@ -184,11 +220,11 @@
               <input type="text" class="auth-input user-name-input" placeholder="مثال: صالح بن محمد الحميدان" autocomplete="name">
             </div>
             <div class="auth-input-group">
-              <label>رمز المرور الشخصي (PIN) *</label>
-              <input type="text" class="auth-input user-pin-input" placeholder="مثال: 1234" maxlength="10">
+              <label>رمز المرور الشخصي (PIN / كلمة السر) *</label>
+              <input type="text" class="auth-input user-pin-input" placeholder="مثال: 1234" maxlength="20">
             </div>
             <div class="auth-input-group">
-              <label>رقم الجوال (اختياري)</label>
+              <label>رقم الجوال *</label>
               <input type="tel" class="auth-input user-phone-input" placeholder="05xxxxxxxx" dir="ltr">
             </div>
           </div>

@@ -5,6 +5,7 @@
 
 let allRegistrations = [];
 let allExpenses = [];
+let allMeetings = [];
 let currentFilter = 'all';
 let searchQuery = '';
 let currentSettings = {};
@@ -60,6 +61,13 @@ function adminLogout() {
 // ==========================================
 
 function initAdminDashboard() {
+  // Listen to meetings lifecycle
+  apiListenMeetings(list => {
+    allMeetings = list || [];
+    renderMeetingsLifecycle();
+    renderMeetingsArchive();
+  });
+
   // Listen to registrations
   apiListenRegistrations(list => {
     allRegistrations = list || [];
@@ -787,3 +795,419 @@ function cleanPhone(phone) {
   }
   return p;
 }
+
+// ==========================================
+// Meetings Lifecycle & Executive Feedback Management
+// ==========================================
+
+function renderMeetingsLifecycle() {
+  const active = apiGetActiveMeeting();
+  const badgeEl = document.getElementById('meetingStatusBadge');
+  const titleEl = document.getElementById('meetingTitleDisplay');
+  const dateEl = document.getElementById('meetingDateDisplay');
+  const venueEl = document.getElementById('meetingVenueDisplay');
+  const targetEl = document.getElementById('meetingTargetDisplay');
+  const btnClose = document.getElementById('btnCloseMeetingBtn');
+
+  if (active) {
+    if (badgeEl) {
+      badgeEl.className = 'meeting-status-pill active';
+      badgeEl.innerHTML = '🟢 اجتماع نشط ومفعل';
+    }
+    if (titleEl) titleEl.textContent = active.title || 'اجتماع أسرة الحميدان';
+    if (dateEl) dateEl.textContent = active.meetingDate || 'يحدد لاحقاً';
+    if (venueEl) venueEl.textContent = active.venue || 'سيتم تحديد المقر';
+    if (targetEl) targetEl.textContent = `الميزانية التقديرية: ${(Number(active.targetBudget) || 0).toLocaleString('en-US')} ريال`;
+    if (btnClose) {
+      btnClose.style.display = 'inline-flex';
+      btnClose.disabled = false;
+    }
+  } else {
+    if (badgeEl) {
+      badgeEl.className = 'meeting-status-pill closed';
+      badgeEl.innerHTML = '⚪ لا يوجد اجتماع نشط';
+    }
+    if (titleEl) titleEl.textContent = 'لا يوجد اجتماع نشط حالياً (كافة الاجتماعات السابقة مؤرشفة)';
+    if (dateEl) dateEl.textContent = '-';
+    if (venueEl) venueEl.textContent = '-';
+    if (targetEl) targetEl.textContent = 'اضغط "إنشاء اجتماع جديد" لبدء دورة جديدة';
+    if (btnClose) {
+      btnClose.style.display = 'none';
+      btnClose.disabled = true;
+    }
+  }
+}
+
+function openCreateMeetingModal() {
+  const modal = document.getElementById('createMeetingModal');
+  if (!modal) return;
+
+  // Prepopulate with sensible defaults
+  const titleInput = document.getElementById('newMeetingTitle');
+  const dateInput = document.getElementById('newMeetingDate');
+  const venueInput = document.getElementById('newMeetingVenue');
+  const mapsInput = document.getElementById('newMeetingMapsUrl');
+  const targetInput = document.getElementById('newMeetingTargetBudget');
+
+  if (titleInput && !titleInput.value) titleInput.value = 'اجتماع أسرة الحميدان الخامس';
+  if (dateInput && !dateInput.value) dateInput.value = currentSettings.meetingDate || '';
+  if (venueInput && !venueInput.value) venueInput.value = currentSettings.venue || '';
+  if (mapsInput && !mapsInput.value) mapsInput.value = currentSettings.mapsUrl || '';
+  if (targetInput && !targetInput.value) targetInput.value = '35000';
+
+  modal.classList.add('active');
+}
+
+function closeCreateMeetingModal() {
+  const modal = document.getElementById('createMeetingModal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function submitCreateMeeting() {
+  const title = (document.getElementById('newMeetingTitle')?.value || '').trim();
+  const meetingDate = (document.getElementById('newMeetingDate')?.value || '').trim();
+  const venue = (document.getElementById('newMeetingVenue')?.value || '').trim();
+  const mapsUrl = (document.getElementById('newMeetingMapsUrl')?.value || '').trim();
+  const targetBudget = Number(document.getElementById('newMeetingTargetBudget')?.value) || 0;
+  const notes = (document.getElementById('newMeetingNotes')?.value || '').trim();
+
+  if (!title || !meetingDate || !venue) {
+    showAdminToast('⚠️ يرجى تعبئة الحقول الأساسية: العنوان، التاريخ، والمقر');
+    return;
+  }
+
+  try {
+    await apiCreateNewMeeting({
+      title,
+      meetingDate,
+      venue,
+      mapsUrl,
+      targetBudget,
+      notes
+    });
+
+    closeCreateMeetingModal();
+    showAdminToast('✓ تم إنشاء الاجتماع الجديد وتفعيله بنجاح!');
+  } catch (err) {
+    console.error(err);
+    showAdminToast('حدث خطأ أثناء إنشاء الاجتماع');
+  }
+}
+
+function openCloseMeetingModal() {
+  const active = apiGetActiveMeeting();
+  if (!active) {
+    showAdminToast('لا يوجد اجتماع نشط لإقفاله');
+    return;
+  }
+
+  // Calculate live stats
+  let totalFamilies = allRegistrations.length;
+  let totalAttendees = 0;
+  let totalTarget = 0;
+  let totalCollected = 0;
+
+  allRegistrations.forEach(r => {
+    const total = Number(r.totalAmount) || 0;
+    totalAttendees += (Number(r.totalMembers) || 0);
+    totalTarget += total;
+    if (r.status === 'paid') {
+      totalCollected += total;
+    } else if (r.status === 'partial') {
+      totalCollected += Math.max(0, Math.min(total, Number(r.paidAmount) || 0));
+    }
+  });
+
+  let totalExpenses = 0;
+  allExpenses.forEach(e => {
+    totalExpenses += (Number(e.amount) || 0);
+  });
+
+  const netBalance = totalCollected - totalExpenses;
+  const collectionRate = totalTarget > 0 ? Math.round((totalCollected / totalTarget) * 100) : 0;
+
+  const statsBox = document.getElementById('closeMeetingStatsBox');
+  if (statsBox) {
+    statsBox.innerHTML = `
+      <div style="font-weight:700; color:var(--gray-900); font-size:1.02rem; margin-bottom:8px;">
+        📊 الحساب الختامي المباشر لـ: ${escapeHtml(active.title || 'الاجتماع الحالي')}
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; font-size:0.85rem;">
+        <div style="background:#fff; padding:8px 10px; border-radius:8px; border:1px solid var(--border-light);">
+          👥 إجمالي الحضور: <strong>${totalAttendees} فرد</strong> (${totalFamilies} أسرة)
+        </div>
+        <div style="background:#fff; padding:8px 10px; border-radius:8px; border:1px solid var(--border-light);">
+          💰 المبالغ المحصلة: <strong style="color:var(--success);">${totalCollected.toLocaleString('en-US')} ريال</strong> (${collectionRate}%)
+        </div>
+        <div style="background:#fff; padding:8px 10px; border-radius:8px; border:1px solid var(--border-light);">
+          💸 إجمالي التكاليف والمصاريف: <strong style="color:var(--danger);">${totalExpenses.toLocaleString('en-US')} ريال</strong>
+        </div>
+        <div style="background:#fff; padding:8px 10px; border-radius:8px; border:1px solid var(--border-light);">
+          ⚖️ صافي الفائض / العجز: <strong style="color:${netBalance >= 0 ? 'var(--success)' : 'var(--danger)'};">${netBalance.toLocaleString('en-US')} ريال</strong>
+        </div>
+      </div>
+      <div style="font-size:0.78rem; color:var(--gray-600); margin-top:8px;">
+        * عند الإقفال، سيتم تجميد هذا الكشف بالكامل وأرشفته كتقرير ختامي رسمي مع ملاحظات التقييم.
+      </div>
+    `;
+  }
+
+  const modal = document.getElementById('closeMeetingModal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeCloseMeetingModal() {
+  const modal = document.getElementById('closeMeetingModal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function submitCloseMeeting() {
+  const feedback = (document.getElementById('closeMeetingFeedback')?.value || '').trim();
+  if (!feedback) {
+    showAdminToast('⚠️ يرجى كتابة ملاحظات التقييم الختامي والتوصيات');
+    return;
+  }
+
+  try {
+    const closed = await apiCloseCurrentMeeting(feedback);
+    closeCloseMeetingModal();
+    showAdminToast('✓ تم إقفال الاجتماع وتوليد التقرير الختامي بنجاح!');
+    
+    // Immediately open the feedback report modal so admin sees it!
+    if (closed && closed.id) {
+      viewMeetingFeedbackReport(closed.id);
+    }
+  } catch (err) {
+    console.error(err);
+    showAdminToast('حدث خطأ أثناء إقفال الاجتماع');
+  }
+}
+
+function renderMeetingsArchive() {
+  const container = document.getElementById('meetingsArchiveList');
+  if (!container) return;
+
+  const meetings = getLocalMeetings();
+  if (meetings.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:36px 20px; background:var(--surface-card-subtle); border-radius:12px; border:1px dashed var(--border-light); color:var(--gray-500);">
+        <svg style="width:40px; height:40px; fill:var(--gray-400); margin-bottom:8px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 2h2v5h-2V5zm0 7h2v2h-2v-2zm-4 4h10v2H8v-2z"/></svg>
+        <div style="font-weight:700; font-size:1rem; color:var(--gray-700); margin-bottom:4px;">لا توجد اجتماعات مؤرشفة حتى الآن</div>
+        <div style="font-size:0.85rem;">عند إقفال أي اجتماع نشط، سيتم حفظ تقريره الختامي ومصاريفه وتكاليفه بالكامل هنا.</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = meetings.map(m => {
+    const isClosed = m.status === 'closed';
+    const net = (m.summary?.netBalance !== undefined) ? m.summary.netBalance : 0;
+    const netColor = net >= 0 ? 'var(--success)' : 'var(--danger)';
+
+    return `
+      <div class="archive-card">
+        <div class="archive-card-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="meeting-status-pill ${m.status}">
+                ${isClosed ? '🔒 مقفل ومؤرشف' : '🟢 نشط ومفعل'}
+              </span>
+              <h4 style="margin:0; font-size:1.1rem; color:var(--gray-900);">${escapeHtml(m.title)}</h4>
+            </div>
+            <div style="font-size:0.83rem; color:var(--gray-600); display:flex; gap:12px; flex-wrap:wrap;">
+              <span>📅 ${escapeHtml(m.meetingDate || '-')}</span>
+              <span>📍 ${escapeHtml(m.venue || '-')}</span>
+              <span>🕒 تاريخ الإنشاء: ${m.createdAt ? new Date(m.createdAt).toLocaleDateString('ar-SA') : '-'}</span>
+              ${m.closedAt ? `<span>🔒 تاريخ الإقفال: ${new Date(m.closedAt).toLocaleDateString('ar-SA')}</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-meeting-action" onclick="viewMeetingFeedbackReport('${m.id}')" style="background:var(--gold-primary); color:#fff; border-color:var(--gold-primary);">
+              📑 عرض الفيدباك والتقرير الشامل
+            </button>
+            ${isClosed ? `
+              <button type="button" class="btn-meeting-action btn-reopen" onclick="reopenMeeting('${m.id}')" title="إعادة فتح الاجتماع وتعديل بياناته">
+                🔄 إعادة فتح
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        ${m.summary ? `
+          <div class="archive-stats-row">
+            <div class="archive-stat-mini">
+              <span class="lbl">إجمالي الأسر والحضور</span>
+              <span class="val">${m.summary.totalAttendees || 0} فرد (${m.summary.totalFamilies || 0} أسرة)</span>
+            </div>
+            <div class="archive-stat-mini">
+              <span class="lbl">المبالغ المسددة</span>
+              <span class="val" style="color:var(--success);">${(Number(m.summary.totalCollected) || 0).toLocaleString('en-US')} ريال</span>
+            </div>
+            <div class="archive-stat-mini">
+              <span class="lbl">إجمالي المصاريف</span>
+              <span class="val" style="color:var(--danger);">${(Number(m.summary.totalExpenses) || 0).toLocaleString('en-US')} ريال</span>
+            </div>
+            <div class="archive-stat-mini">
+              <span class="lbl">صافي الحساب الختامي</span>
+              <span class="val" style="color:${netColor};">${net.toLocaleString('en-US')} ريال</span>
+            </div>
+          </div>
+        ` : ''}
+
+        ${m.feedback ? `
+          <div style="background:var(--surface-card-subtle); border-radius:8px; padding:10px 14px; margin-top:12px; font-size:0.86rem; border-right:3px solid var(--gold-primary);">
+            <strong style="color:var(--gray-900);">📝 تقييم وتوصيات الختام (Feedback):</strong>
+            <p style="margin:4px 0 0; color:var(--gray-700); line-height:1.5;">${escapeHtml(m.feedback)}</p>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function viewMeetingFeedbackReport(meetingId) {
+  const meetings = getLocalMeetings();
+  const m = meetings.find(x => x.id === meetingId) || apiGetActiveMeeting();
+  if (!m) {
+    showAdminToast('لم يتم العثور على بيانات الاجتماع');
+    return;
+  }
+
+  const modal = document.getElementById('feedbackReportModal');
+  const body = document.getElementById('feedbackReportModalBody');
+  if (!modal || !body) return;
+
+  const s = m.summary || {
+    totalFamilies: allRegistrations.length,
+    totalAttendees: allRegistrations.reduce((acc, r) => acc + (Number(r.totalMembers) || 0), 0),
+    totalCollected: allRegistrations.reduce((acc, r) => acc + (r.status === 'paid' ? Number(r.totalAmount) : (Number(r.paidAmount) || 0)), 0),
+    totalExpenses: allExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0),
+    netBalance: 0,
+    expensesSnapshot: allExpenses,
+    registrationsSnapshot: allRegistrations
+  };
+  s.netBalance = (s.totalCollected || 0) - (s.totalExpenses || 0);
+
+  const expList = s.expensesSnapshot || allExpenses || [];
+  const expHtml = expList.length > 0 ? expList.map((e, idx) => `
+    <tr style="border-bottom:1px solid var(--border-subtle); font-size:0.86rem;">
+      <td style="padding:8px 10px;">${idx + 1}</td>
+      <td style="padding:8px 10px; font-weight:600;">${escapeHtml(e.title)}</td>
+      <td style="padding:8px 10px;">${getCategoryName(e.category)}</td>
+      <td style="padding:8px 10px; font-weight:700; color:var(--danger);">${Number(e.amount).toLocaleString('en-US')} ريال</td>
+    </tr>
+  `).join('') : `<tr><td colspan="4" style="text-align:center; padding:12px; color:var(--gray-500);">لا توجد مصاريف مسجلة</td></tr>`;
+
+  body.innerHTML = `
+    <!-- Header banner -->
+    <div style="background:var(--beige-50); border:1px solid var(--beige-300); border-radius:12px; padding:16px; margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="display:inline-block; font-size:0.8rem; font-weight:700; color:var(--gold-primary); margin-bottom:2px;">
+            صندوق أسرة عائلة الحميدان الرسمي
+          </span>
+          <h2 style="margin:0; font-size:1.3rem; color:var(--gray-900); font-family:var(--font-heading);">${escapeHtml(m.title)}</h2>
+        </div>
+        <div style="text-align:left;">
+          <span class="meeting-status-pill ${m.status}">${m.status === 'closed' ? '🔒 معتمد ومقفل' : '🟢 نشط'}</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:16px; margin-top:10px; font-size:0.85rem; color:var(--gray-700); flex-wrap:wrap;">
+        <span>📅 <strong>التاريخ:</strong> ${escapeHtml(m.meetingDate || '-')}</span>
+        <span>📍 <strong>المقر:</strong> ${escapeHtml(m.venue || '-')}</span>
+        ${m.closedAt ? `<span>🕒 <strong>تاريخ الاعتماد والإقفال:</strong> ${new Date(m.closedAt).toLocaleDateString('ar-SA')}</span>` : ''}
+      </div>
+    </div>
+
+    <!-- KPI Metric Summary -->
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px;">
+      <div style="background:#fff; border:1px solid var(--border-light); border-radius:10px; padding:12px; text-align:center;">
+        <div style="font-size:0.75rem; color:var(--gray-600); margin-bottom:4px;">إجمالي الحضور</div>
+        <div style="font-size:1.3rem; font-weight:800; color:var(--gray-900);">${s.totalAttendees} فرد</div>
+        <div style="font-size:0.75rem; color:var(--gray-500);">${s.totalFamilies} أسرة</div>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border-light); border-radius:10px; padding:12px; text-align:center;">
+        <div style="font-size:0.75rem; color:var(--gray-600); margin-bottom:4px;">المبالغ المحصلة</div>
+        <div style="font-size:1.3rem; font-weight:800; color:var(--success);">${(Number(s.totalCollected) || 0).toLocaleString('en-US')}</div>
+        <div style="font-size:0.75rem; color:var(--gray-500);">ريال سعودي</div>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border-light); border-radius:10px; padding:12px; text-align:center;">
+        <div style="font-size:0.75rem; color:var(--gray-600); margin-bottom:4px;">إجمالي المصاريف</div>
+        <div style="font-size:1.3rem; font-weight:800; color:var(--danger);">${(Number(s.totalExpenses) || 0).toLocaleString('en-US')}</div>
+        <div style="font-size:0.75rem; color:var(--gray-500);">ريال سعودي</div>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border-light); border-radius:10px; padding:12px; text-align:center;">
+        <div style="font-size:0.75rem; color:var(--gray-600); margin-bottom:4px;">صافي الرصيد الختامي</div>
+        <div style="font-size:1.3rem; font-weight:800; color:${s.netBalance >= 0 ? 'var(--success)' : 'var(--danger)'};">${s.netBalance.toLocaleString('en-US')}</div>
+        <div style="font-size:0.75rem; color:var(--gray-500);">${s.netBalance >= 0 ? 'فائض مرحل' : 'عجز مسجل'}</div>
+      </div>
+    </div>
+
+    <!-- Expenses Table -->
+    <div style="margin-bottom:16px;">
+      <h4 style="font-size:0.95rem; margin-bottom:8px; color:var(--gray-900);">💸 كشف تفاصيل المصاريف والتكاليف الفعلية:</h4>
+      <table style="width:100%; border-collapse:collapse; border:1px solid var(--border-light); border-radius:8px; overflow:hidden;">
+        <thead style="background:var(--surface-card-subtle); font-size:0.82rem; color:var(--gray-700);">
+          <tr>
+            <th style="padding:8px 10px; text-align:right;">#</th>
+            <th style="padding:8px 10px; text-align:right;">البند</th>
+            <th style="padding:8px 10px; text-align:right;">التصنيف</th>
+            <th style="padding:8px 10px; text-align:right;">المبلغ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${expHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Executive Feedback Box -->
+    <div style="background:var(--surface-card-subtle); border-radius:12px; border:1px solid var(--border-light); padding:16px; margin-bottom:12px;">
+      <h4 style="margin:0 0 6px; font-size:0.98rem; color:var(--gray-900); display:flex; align-items:center; gap:6px;">
+        <span>📝</span>
+        <span>تقييم وتوصيات الإدارة للاجتماع (Feedback & Evaluation):</span>
+      </h4>
+      <div style="background:#fff; padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); font-size:0.9rem; line-height:1.6; color:var(--gray-800); white-space:pre-wrap;">
+        ${escapeHtml(m.feedback || 'تم إنجاز كافة فعاليات الاجتماع بنجاح وتغطية التكاليف من الاشتراكات المحصلة ولله الحمد.')}
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('active');
+}
+
+function closeFeedbackModal() {
+  const modal = document.getElementById('feedbackReportModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function printFeedbackReport() {
+  const content = document.getElementById('feedbackReportModalBody')?.innerHTML;
+  if (!content) return;
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+      <meta charset="utf-8">
+      <title>التقرير الختامي للاجتماع - عائلة الحميدان</title>
+      <link rel="stylesheet" href="assets/css/style.css">
+      <style>
+        body { background:#fff; font-family:'Tajawal', sans-serif; padding:24px; color:#111; }
+      </style>
+    </head>
+    <body onload="window.print()">
+      ${content}
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+}
+
+async function reopenMeeting(meetingId) {
+  if (confirm('هل ترغب في إعادة فتح هذا الاجتماع للاستمرار في تسجيل المشتركين والمصاريف؟')) {
+    await apiReopenMeeting(meetingId);
+    showAdminToast('✓ تمت إعادة فتح الاجتماع وتفعيله!');
+  }
+}
+
