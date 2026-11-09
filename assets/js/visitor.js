@@ -267,7 +267,6 @@ window.declineRestoredFamily = function() {
   if (modal) modal.classList.remove('active');
   window.pendingFamilyHistory = null;
   categories.forEach(c => appState.counts[c.id] = 0);
-  appState.counts['father'] = 1;
   renderCategories();
   updateSummary();
   saveCurrentSession();
@@ -283,7 +282,6 @@ window.visitorLogout = function() {
     appState.currentRegistrationId = null;
     appState.currentStatus = null;
     categories.forEach(c => appState.counts[c.id] = 0);
-    appState.counts['father'] = 1;
 
     localStorage.removeItem('humaidan_visitor_session');
 
@@ -513,33 +511,41 @@ function updateSummary() {
 function loadSavedUserSession() {
   try {
     const saved = localStorage.getItem('humaidan_visitor_session');
+
+    // Always start with all category counts strictly at 0
+    categories.forEach(c => {
+      appState.counts[c.id] = 0;
+    });
+
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.name) appState.name = parsed.name;
       if (parsed.pin) appState.pin = parsed.pin;
       if (parsed.phone) appState.phone = parsed.phone;
+
+      // Clean up any stale counts from previous visits in localStorage
       if (parsed.counts) {
-        Object.keys(parsed.counts).forEach(k => {
-          if (appState.counts[k] !== undefined) {
-            appState.counts[k] = parsed.counts[k];
-          }
-        });
+        delete parsed.counts;
+        try {
+          localStorage.setItem('humaidan_visitor_session', JSON.stringify(parsed));
+        } catch (e) {}
       }
+
       if (parsed.currentRegistrationId) {
         appState.currentRegistrationId = parsed.currentRegistrationId;
         checkExistingRegistrationStatus();
       }
-    } else {
-      // Default initial counts for convenience: Father = 1
-      appState.counts['father'] = 1;
     }
 
     // Populate inputs
-    document.querySelectorAll('.user-name-input').forEach(i => i.value = appState.name);
-    document.querySelectorAll('.user-pin-input').forEach(i => i.value = appState.pin);
+    document.querySelectorAll('.user-name-input').forEach(i => i.value = appState.name || '');
+    document.querySelectorAll('.user-pin-input').forEach(i => i.value = appState.pin || '');
     document.querySelectorAll('.user-phone-input').forEach(i => i.value = appState.phone || '');
   } catch (e) {
     console.error("Error loading session:", e);
+    categories.forEach(c => {
+      appState.counts[c.id] = 0;
+    });
   }
 }
 
@@ -549,7 +555,6 @@ function saveCurrentSession() {
       name: appState.name,
       pin: appState.pin,
       phone: appState.phone,
-      counts: appState.counts,
       currentRegistrationId: appState.currentRegistrationId
     };
     localStorage.setItem('humaidan_visitor_session', JSON.stringify(session));
@@ -786,7 +791,6 @@ function copyIban() {
 function resetAll() {
   if (confirm('هل أنت متأكد من رغبتك في إعادة تعيين كافة البيانات؟')) {
     categories.forEach(c => appState.counts[c.id] = 0);
-    appState.counts['father'] = 1;
     appState.name = '';
     appState.pin = '';
     appState.phone = '';
