@@ -682,6 +682,28 @@ async function handleRegistrationSubmit() {
 
     showToast('✓ تم تسجيل بيانات أسرتكم بنجاح!');
     openConfirmationModal(saved);
+
+    // If auto messaging on registration is active, send welcome/iban details automatically
+    if (currentSystemSettings?.messaging?.enabled && currentSystemSettings?.messaging?.autoSendOnRegister && saved.phone) {
+      const welcomeMsg = [
+        'أهلاً ومرحباً بك يا ' + saved.name + '،',
+        'تم تسجيل بيانات أسرتكم الكريمة بنجاح لحضور اجتماع عائلة الحميدان (' + saved.totalMembers + ' أفراد).',
+        'المبلغ المطلوب: ' + saved.totalAmount + ' ريال.',
+        '',
+        'بيانات الحساب البنكي للتحويل:',
+        '- البنك: ' + (currentSystemSettings.bankName || 'مصرف الراجحي'),
+        '- الحساب: ' + (currentSystemSettings.accountName || 'صندوق عائلة الحميدان'),
+        '- الآيبان: ' + (currentSystemSettings.iban || ''),
+        '',
+        'شاكرين ومقدرين لكم حرصكم على لقاء العائلة المبارك.'
+      ].join('\n');
+
+      MessagingService.send(saved.phone, welcomeMsg, currentSystemSettings.messaging)
+        .then(res => {
+          if (res.success) console.log('Auto welcome message sent to ' + saved.phone);
+        })
+        .catch(e => console.warn('Auto message error:', e));
+    }
   } catch (err) {
     console.error(err);
     showToast('حدث خطأ أثناء الحفظ، يرجى المحاولة ثانية');

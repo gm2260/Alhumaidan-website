@@ -175,7 +175,7 @@ function updateFinancialStats() {
     ? Math.round((totalCollected / totalTargetAmount) * 100) 
     : 0;
 
-  // Update DOM elements
+  // Update Standard Desktop Stats Elements
   setText('statTotalFamilies', totalFamilies);
   setText('statTotalAttendees', totalAttendees);
   setText('statTotalTarget', totalTargetAmount.toLocaleString('en-US'));
@@ -185,9 +185,16 @@ function updateFinancialStats() {
   setText('statTotalExpenses', totalExpenses.toLocaleString('en-US'));
   setText('statNetBalance', netBalance.toLocaleString('en-US'));
 
+  // Update Senior Executive Summary Elements (Mobile Priority)
+  setText('seniorStatCollected', `${totalCollected.toLocaleString('en-US')} ريال`);
+  setText('seniorStatPending', `${pendingAmount.toLocaleString('en-US')} ريال`);
+  setText('seniorStatFamilies', `${totalFamilies} أسرة`);
+  setText('seniorStatAttendees', `${totalAttendees} فرد`);
+  setText('seniorStatRate', `${collectionRate}%`);
+
   const netBalanceEl = document.getElementById('statNetBalance');
   if (netBalanceEl) {
-    netBalanceEl.style.color = netBalance >= 0 ? 'var(--success)' : 'var(--danger)';
+    netBalanceEl.style.color = netBalance >= 0 ? 'var(--senior-green)' : 'var(--senior-red)';
   }
 }
 
@@ -196,13 +203,93 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
+// Collapsible Detailed Stats Toggle
+let isFullStatsExpanded = false;
+function toggleFullStats() {
+  const statsGrid = document.getElementById('statsGridDetailed');
+  const arrowEl = document.getElementById('toggleStatsArrow');
+  if (!statsGrid) return;
+  isFullStatsExpanded = !isFullStatsExpanded;
+  if (isFullStatsExpanded) {
+    statsGrid.classList.remove('collapsed');
+    if (arrowEl) arrowEl.textContent = '▲';
+  } else {
+    statsGrid.classList.add('collapsed');
+    if (arrowEl) arrowEl.textContent = '▼';
+  }
+}
+
+// Mobile View Mode Switcher: Cards vs Table
+let currentViewMode = (window.innerWidth <= 768) ? 'cards' : 'table';
+function toggleViewMode() {
+  const tableContainer = document.getElementById('desktopTableContainer');
+  const cardsContainer = document.getElementById('seniorCardsContainer');
+  const iconEl = document.getElementById('viewToggleIcon');
+  const textEl = document.getElementById('viewToggleText');
+
+  if (currentViewMode === 'cards') {
+    currentViewMode = 'table';
+    if (tableContainer) {
+      tableContainer.classList.add('force-table');
+      tableContainer.classList.add('force-shown');
+      tableContainer.style.display = 'block';
+    }
+    if (cardsContainer) {
+      cardsContainer.classList.add('force-hidden');
+      cardsContainer.style.display = 'none';
+    }
+    if (iconEl) iconEl.textContent = '📱';
+    if (textEl) textEl.textContent = 'عرض كـ كروت لكبار السن';
+  } else {
+    currentViewMode = 'cards';
+    if (tableContainer) {
+      tableContainer.classList.remove('force-table');
+      tableContainer.classList.remove('force-shown');
+      tableContainer.style.display = '';
+    }
+    if (cardsContainer) {
+      cardsContainer.classList.remove('force-hidden');
+      cardsContainer.style.display = '';
+    }
+    if (iconEl) iconEl.textContent = '🖥️';
+    if (textEl) textEl.textContent = 'عرض كـ جدول';
+  }
+}
+
+function clearAdminSearch() {
+  const searchInput = document.getElementById('adminSearchInput');
+  const clearBtn = document.getElementById('adminSearchClearBtn');
+  if (searchInput) searchInput.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  searchQuery = '';
+  renderRegistrations();
+}
+
 // ==========================================
-// Registrations Table & Management
+// Registrations Table & Senior Mobile Cards
 // ==========================================
 
 function renderRegistrations() {
   const tbody = document.getElementById('registrationsTableBody');
-  if (!tbody) return;
+  const cardsContainer = document.getElementById('seniorCardsContainer');
+  const clearBtn = document.getElementById('adminSearchClearBtn');
+  
+  if (clearBtn) {
+    clearBtn.style.display = searchQuery ? 'flex' : 'none';
+  }
+
+  // Calculate live counters for filter pills
+  const countAll = allRegistrations.length;
+  const countPending = allRegistrations.filter(r => r.status !== 'paid' && r.status !== 'partial').length;
+  const countPaid = allRegistrations.filter(r => r.status === 'paid').length;
+  const countPartial = allRegistrations.filter(r => r.status === 'partial').length;
+  const totalUnpaid = allRegistrations.filter(r => r.status !== 'paid').length;
+
+  setText('pillCountAll', countAll);
+  setText('pillCountPending', countPending);
+  setText('pillCountPaid', countPaid);
+  setText('pillCountPartial', countPartial);
+  setText('bulkPendingCountBadge', totalUnpaid);
 
   let filtered = allRegistrations.filter(r => {
     // Filter by status
@@ -219,128 +306,267 @@ function renderRegistrations() {
     return true;
   });
 
+  // Empty state handler
   if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 30px; color: var(--gray-500);">
-          لا توجد سجلات مطابقة للبحث أو التصفية الحالية
-        </td>
-      </tr>
-    `;
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 36px; color: var(--gray-500); font-size:1rem; font-weight:700;">
+            🔍 لا توجد أسر مسجلة مطابقة للبحث أو التصفية الحالية
+          </td>
+        </tr>
+      `;
+    }
+    if (cardsContainer) {
+      cardsContainer.innerHTML = `
+        <div style="background:#fff; border:2px dashed var(--border-light); border-radius:16px; padding:32px 16px; text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:8px;">🔍</div>
+          <h4 style="margin:0 0 6px; font-size:1.15rem; font-weight:800; color:var(--gray-800);">لا توجد أسر مطابقة للبحث</h4>
+          <p style="margin:0; font-size:0.88rem; color:var(--gray-500);">يرجى اختيار فلتر آخر أو كتابة اسم صحيح في خانة البحث أعلاه.</p>
+        </div>
+      `;
+    }
     return;
   }
 
-  tbody.innerHTML = filtered.map((r, index) => {
-    const status = r.status || 'pending';
-    const total = Number(r.totalAmount) || 0;
-    const paid = status === 'paid' ? total : (Number(r.paidAmount) || 0);
-    const remaining = status === 'paid' ? 0 : Math.max(0, total - paid);
+  // 1. Render Desktop Table Body
+  if (tbody) {
+    tbody.innerHTML = filtered.map((r, index) => {
+      const status = r.status || 'pending';
+      const total = Number(r.totalAmount) || 0;
+      const paid = status === 'paid' ? total : (Number(r.paidAmount) || 0);
+      const remaining = status === 'paid' ? 0 : Math.max(0, total - paid);
 
-    let amountHtml = '';
-    let statusBtnHtml = '';
+      let amountHtml = '';
+      let statusBtnHtml = '';
 
-    if (status === 'paid') {
-      amountHtml = `
-        <div>
-          <strong style="font-size: 1.05rem; color: var(--gray-900);">${total.toLocaleString('en-US')} ريال</strong>
-          <div style="font-size: 0.78rem; color: var(--success); font-weight: 700; margin-top: 2px;">
-            ✓ مسدد بالكامل
+      if (status === 'paid') {
+        amountHtml = `
+          <div>
+            <strong style="font-size: 1.05rem; color: var(--gray-900);">${total.toLocaleString('en-US')} ريال</strong>
+            <div style="font-size: 0.78rem; color: var(--senior-green); font-weight: 800; margin-top: 2px;">
+              ✓ مسدد بالكامل
+            </div>
           </div>
-        </div>
-      `;
-      statusBtnHtml = `
-        <button type="button" 
-                class="status-toggle-btn paid"
-                onclick="openPaymentModal('${r.id}')"
-                title="انقر لتعديل السداد (كامل / جزئي)">
-          ✓ تم السداد بالكامل
-        </button>
-      `;
-    } else if (status === 'partial') {
-      amountHtml = `
-        <div>
-          <div style="font-size: 0.82rem; color: var(--gray-600);">المطلوب: <strong>${total.toLocaleString('en-US')} ر.س</strong></div>
-          <div style="display:flex; gap:8px; margin-top:3px; flex-wrap:wrap; font-size:0.82rem;">
-            <span style="color:var(--success); font-weight:700;">مدفوع: ${paid.toLocaleString('en-US')} ر.س</span>
-            <span style="color:#b45309; font-weight:700;">متبقي: ${remaining.toLocaleString('en-US')} ر.س</span>
-          </div>
-        </div>
-      `;
-      statusBtnHtml = `
-        <button type="button" 
-                class="status-toggle-btn partial"
-                onclick="openPaymentModal('${r.id}')"
-                title="انقر لتعديل السداد (كامل / جزئي)">
-          🌓 سداد جزئي (${paid.toLocaleString('en-US')} ر.س)
-        </button>
-      `;
-    } else {
-      amountHtml = `
-        <div>
-          <strong style="font-size: 1.05rem; color: var(--gray-900);">${total.toLocaleString('en-US')} ريال</strong>
-          <div style="font-size: 0.78rem; color: var(--warning); font-weight: 600; margin-top: 2px;">
-            ⏳ غير مسدد (متبقي: ${total.toLocaleString('en-US')} ر.س)
-          </div>
-        </div>
-      `;
-      statusBtnHtml = `
-        <button type="button" 
-                class="status-toggle-btn pending"
-                onclick="openPaymentModal('${r.id}')"
-                title="انقر لتحديد السداد (كامل / جزئي)">
-          ⏳ قيد الانتظار
-        </button>
-      `;
-    }
-
-    const noteBadge = r.adminNotes 
-      ? `<div style="font-size:0.75rem; color:var(--gray-600); margin-top:3px; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.adminNotes)}">📝 ${escapeHtml(r.adminNotes)}</div>`
-      : '';
-
-    return `
-      <tr>
-        <td style="font-weight: 700;">${index + 1}</td>
-        <td>
-          <div style="font-weight: 700; color: var(--gray-900); font-size: 0.95rem;">${escapeHtml(r.name)}</div>
-          <div style="font-size: 0.78rem; color: var(--gray-500);">${r.phone ? '📱 ' + escapeHtml(r.phone) : 'بدون رقم جوال'}</div>
-          ${noteBadge}
-        </td>
-        <td>
-          <span style="font-weight: 600;">${r.totalMembers || 0} أفراد</span>
+        `;
+        statusBtnHtml = `
           <button type="button" 
-                  onclick="viewRegistrationDetails('${r.id}')"
-                  style="background:none; border:none; color:var(--gold-primary); font-size:0.78rem; cursor:pointer; text-decoration:underline; display:block; margin-top:2px;">
-            عرض التفصيل
+                  class="status-toggle-btn paid"
+                  onclick="openPaymentModal('${r.id}')"
+                  title="تعديل حالة السداد">
+            ✓ مسدد بالكامل
           </button>
-        </td>
-        <td>
-          ${amountHtml}
-        </td>
-        <td>
-          ${statusBtnHtml}
-        </td>
-        <td>
-          <div style="display:flex; align-items:center; gap:6px;">
-            ${r.phone ? `
-              <a href="https://wa.me/${cleanPhone(r.phone)}?text=${encodeURIComponent(getWhatsAppTemplate(r))}" 
-                 target="_blank" 
-                 title="مراسلة عبر واتساب"
-                 style="background:#25D366; color:#fff; padding:6px 10px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; font-size:0.8rem;">
-                واتساب
-              </a>
-            ` : ''}
-            <button type="button" 
-                    onclick="deleteReg('${r.id}')" 
-                    title="حذف"
-                    style="background:none; border:1px solid #ffcdd2; color:var(--danger); padding:5px 8px; border-radius:6px; cursor:pointer; font-size:0.8rem;">
-              🗑️
-            </button>
+        `;
+      } else if (status === 'partial') {
+        amountHtml = `
+          <div>
+            <div style="font-size: 0.82rem; color: var(--gray-600);">المطلوب: <strong>${total.toLocaleString('en-US')} ر.س</strong></div>
+            <div style="display:flex; gap:8px; margin-top:3px; flex-wrap:wrap; font-size:0.82rem;">
+              <span style="color:var(--senior-green); font-weight:800;">مدفوع: ${paid.toLocaleString('en-US')} ر.س</span>
+              <span style="color:var(--senior-amber); font-weight:800;">متبقي: ${remaining.toLocaleString('en-US')} ر.س</span>
+            </div>
           </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+        `;
+        statusBtnHtml = `
+          <button type="button" 
+                  class="status-toggle-btn partial"
+                  onclick="openPaymentModal('${r.id}')"
+                  title="تعديل حالة السداد">
+            🌗 سداد جزئي (${paid.toLocaleString('en-US')} ر.س)
+          </button>
+        `;
+      } else {
+        amountHtml = `
+          <div>
+            <strong style="font-size: 1.05rem; color: var(--gray-900);">${total.toLocaleString('en-US')} ريال</strong>
+            <div style="font-size: 0.78rem; color: var(--senior-red); font-weight: 700; margin-top: 2px;">
+              ⏳ غير مسدد (متبقي: ${total.toLocaleString('en-US')} ر.س)
+            </div>
+          </div>
+        `;
+        statusBtnHtml = `
+          <button type="button" 
+                  class="status-toggle-btn pending"
+                  onclick="openPaymentModal('${r.id}')"
+                  title="تحديد السداد">
+            ⏳ قيد الانتظار
+          </button>
+        `;
+      }
+
+      const noteBadge = r.adminNotes 
+        ? `<div style="font-size:0.75rem; color:var(--gray-600); margin-top:3px; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.adminNotes)}">📝 ${escapeHtml(r.adminNotes)}</div>`
+        : '';
+
+      return `
+        <tr>
+          <td style="font-weight: 700;">${index + 1}</td>
+          <td>
+            <div style="font-weight: 800; color: var(--gray-900); font-size: 0.98rem;">${escapeHtml(r.name)}</div>
+            <div style="font-size: 0.8rem; color: var(--gray-600); font-weight:600;">${r.phone ? '📱 ' + escapeHtml(r.phone) : 'بدون رقم جوال'}</div>
+            ${noteBadge}
+          </td>
+          <td>
+            <span style="font-weight: 700;">${r.totalMembers || 0} أفراد</span>
+            <button type="button" 
+                    onclick="viewRegistrationDetails('${r.id}')"
+                    style="background:none; border:none; color:var(--gold-primary); font-size:0.8rem; font-weight:700; cursor:pointer; text-decoration:underline; display:block; margin-top:2px;">
+              عرض التفصيل
+            </button>
+          </td>
+          <td>
+            ${amountHtml}
+          </td>
+          <td>
+            ${statusBtnHtml}
+          </td>
+          <td>
+            <button type="button" 
+                    class="btn-senior-reminder" 
+                    onclick="openPaymentReminderModal('${r.id}')" 
+                    style="height:36px; padding:0 12px; font-size:0.82rem; font-weight:700; border-radius:8px; white-space:nowrap;"
+                    title="إرسال تنبيه بالسداد">
+              📢 تذكير بالسداد
+            </button>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${r.phone ? `
+                <a href="https://wa.me/${cleanPhone(r.phone)}?text=${encodeURIComponent(getWhatsAppTemplate(r))}" 
+                   target="_blank" 
+                   title="مراسلة عبر واتساب"
+                   style="background:#25D366; color:#fff; padding:6px 10px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; font-size:0.82rem; font-weight:700;">
+                  واتساب
+                </a>
+              ` : ''}
+              <button type="button" 
+                      onclick="deleteReg('${r.id}')" 
+                      title="حذف"
+                      style="background:none; border:1px solid #ffcdd2; color:var(--danger); padding:5px 8px; border-radius:6px; cursor:pointer; font-size:0.82rem;">
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // 2. Render Senior Mobile Cards (Mobile Hero Layout)
+  if (cardsContainer) {
+    cardsContainer.innerHTML = filtered.map((r, index) => {
+      const status = r.status || 'pending';
+      const total = Number(r.totalAmount) || 0;
+      const paid = status === 'paid' ? total : (Number(r.paidAmount) || 0);
+      const remaining = status === 'paid' ? 0 : Math.max(0, total - paid);
+      const isUnpaid = status !== 'paid';
+
+      let statusBadgeHtml = '';
+      if (status === 'paid') {
+        statusBadgeHtml = `<span class="senior-status-pill status-paid">✅ مسدد بالكامل</span>`;
+      } else if (status === 'partial') {
+        statusBadgeHtml = `<span class="senior-status-pill status-partial">🌗 مسدد جزئياً</span>`;
+      } else {
+        statusBadgeHtml = `<span class="senior-status-pill status-pending">⏳ لم يسدد بعد</span>`;
+      }
+
+      return `
+        <div class="senior-card ${status}">
+          
+          <!-- Top Bar: Index + Family Head Name + Status Badge -->
+          <div class="senior-card-top">
+            <div class="senior-card-title-group">
+              <span class="senior-card-index">#${index + 1}</span>
+              <h3 class="senior-card-name">${escapeHtml(r.name)}</h3>
+            </div>
+            ${statusBadgeHtml}
+          </div>
+
+          <!-- Contact Row with One-Tap Call & One-Tap WhatsApp -->
+          <div class="senior-card-contact-bar">
+            <div class="senior-card-phone">
+              <span class="phone-icon">📱</span>
+              <span class="phone-number" dir="ltr">${escapeHtml(r.phone || 'بدون جوال')}</span>
+            </div>
+            <div class="senior-card-quick-calls">
+              ${r.phone ? `
+                <a href="tel:${cleanPhone(r.phone)}" class="btn-senior-circle-call" title="اتصال هاتفي مباشر">
+                  📞 اتصال
+                </a>
+                <a href="https://wa.me/${cleanPhone(r.phone)}?text=${encodeURIComponent(getWhatsAppTemplate(r))}" target="_blank" class="btn-senior-circle-wa" title="محادثة واتساب">
+                  💬 واتساب
+                </a>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- 4-cell Metrics Grid (Large clear Arabic numbers) -->
+          <div class="senior-metrics-grid">
+            <div class="senior-metric-cell">
+              <span class="cell-label">عدد الأفراد</span>
+              <strong class="cell-value">${r.totalMembers || 0} فرد</strong>
+            </div>
+            <div class="senior-metric-cell">
+              <span class="cell-label">المطلوب</span>
+              <strong class="cell-value">${total.toLocaleString('en-US')} ريال</strong>
+            </div>
+            <div class="senior-metric-cell ${paid > 0 ? 'text-success' : ''}">
+              <span class="cell-label">المدفوع</span>
+              <strong class="cell-value">${paid.toLocaleString('en-US')} ريال</strong>
+            </div>
+            <div class="senior-metric-cell ${remaining > 0 ? 'text-warning' : 'text-success'}">
+              <span class="cell-label">المتبقي</span>
+              <strong class="cell-value">${remaining.toLocaleString('en-US')} ريال</strong>
+            </div>
+          </div>
+
+          ${r.adminNotes ? `
+            <div class="senior-admin-note">
+              <span>📝</span>
+              <span><strong>ملاحظة الإدارة:</strong> ${escapeHtml(r.adminNotes)}</span>
+            </div>
+          ` : ''}
+
+          <!-- Senior Large Touch Action Buttons -->
+          <div class="senior-card-actions">
+            <!-- 1. Payment Status Button -->
+            <button type="button" class="btn-senior-primary" onclick="openPaymentModal('${r.id}')">
+              <span>💳</span>
+              <span>تعديل / تسجيل السداد</span>
+            </button>
+            
+            <!-- 2. Payment Reminder Button -->
+            ${isUnpaid ? `
+              <button type="button" class="btn-senior-reminder" onclick="openPaymentReminderModal('${r.id}')">
+                <span>📢</span>
+                <span>إرسال تنبيه بسداد المبلغ (${remaining.toLocaleString('en-US')} ريال)</span>
+              </button>
+            ` : `
+              <button type="button" class="btn-senior-receipt" onclick="openPaymentReminderModal('${r.id}')">
+                <span>🧾</span>
+                <span>إرسال إيصال السداد والشكر</span>
+              </button>
+            `}
+
+            <!-- 3. Secondary Actions -->
+            <div class="senior-secondary-actions">
+              <button type="button" class="btn-senior-subtle" onclick="viewRegistrationDetails('${r.id}')">
+                <span>📋</span>
+                <span>تفاصيل الأسرة</span>
+              </button>
+              <button type="button" class="btn-senior-danger" onclick="deleteReg('${r.id}')">
+                <span>🗑️</span>
+                <span>حذف</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }).join('');
+  }
 }
+
 
 // ==========================================
 // Payment Status & Partial Payment Modal Logic
@@ -516,6 +742,18 @@ async function savePaymentModalChanges() {
       ? 'تم السداد بالكامل ✓' 
       : (finalStatus === 'partial' ? `سداد جزئي (${finalPaid} ر.س) 🌓` : 'قيد الانتظار ⏳');
     showAdminToast(`✓ تم تحديث حالة ${escapeHtml(reg.name)} إلى: ${statusLabel}`);
+
+    // If auto-send on payment is enabled, dispatch automated receipt
+    if (finalStatus === 'paid' && currentSettings?.messaging?.enabled && currentSettings?.messaging?.autoSendOnPayment && reg.phone) {
+      const receiptMsg = getWhatsAppTemplate({ ...reg, status: 'paid', paidAmount: finalPaid });
+      MessagingService.send(reg.phone, receiptMsg, currentSettings.messaging)
+        .then(res => {
+          if (res.success) {
+            console.log('Automated payment receipt sent successfully to ' + reg.phone);
+          }
+        })
+        .catch(err => console.warn('Automated receipt failed:', err));
+    }
   } catch (err) {
     console.error(err);
     showAdminToast('حدث خطأ أثناء حفظ التغييرات');
@@ -591,6 +829,373 @@ function getWhatsAppTemplate(reg) {
     return `السلام عليكم ورحمة الله وبركاته يا ${reg.name}،\nنود تذكيركم بتفاصيل اشتراك اجتماع أسرة الحميدان:\nالمبلغ المطلوب: ${total} ريال (${reg.totalMembers || 0} أفراد).\nفضلاً تحويل المبلغ وإرسال الإشعار لتأكيد التسجيل في النظام.\nشاكرين ومقدرين لكم تعاونكم.`;
   }
 }
+
+// ==========================================
+// Payment Reminder & Automated Messaging Modal Handlers
+// ==========================================
+
+let activeReminderReg = null;
+
+function openPaymentReminderModal(regId) {
+  const reg = allRegistrations.find(r => r.id === regId);
+  if (!reg) return;
+  activeReminderReg = reg;
+
+  const total = Number(reg.totalAmount) || 0;
+  const paid = reg.status === 'paid' ? total : (Number(reg.paidAmount) || 0);
+  const remaining = reg.status === 'paid' ? 0 : Math.max(0, total - paid);
+
+  const nameEl = document.getElementById('reminderModalName');
+  const amountEl = document.getElementById('reminderModalAmount');
+  const remEl = document.getElementById('reminderModalRemaining');
+  const phoneEl = document.getElementById('reminderModalPhone');
+  const previewEl = document.getElementById('reminderMessagePreview');
+
+  if (nameEl) nameEl.textContent = reg.name || 'رب الأسرة';
+  if (amountEl) amountEl.textContent = total.toLocaleString('en-US') + ' ريال';
+  if (remEl) remEl.textContent = remaining.toLocaleString('en-US') + ' ريال';
+  if (phoneEl) phoneEl.textContent = reg.phone || '-';
+
+  const msg = formatPaymentReminderMessage(reg, remaining);
+  if (previewEl) previewEl.value = msg;
+
+  const modal = document.getElementById('paymentReminderModal');
+  if (modal) modal.classList.add('active');
+}
+
+function closePaymentReminderModal() {
+  const modal = document.getElementById('paymentReminderModal');
+  if (modal) modal.classList.remove('active');
+  activeReminderReg = null;
+}
+
+function formatPaymentReminderMessage(reg, remaining) {
+  const total = Number(reg.totalAmount) || 0;
+  const bank = currentSettings.bankName || 'مصرف الراجحي';
+  const acc = currentSettings.accountName || 'صندوق عائلة الحميدان';
+  const iban = currentSettings.iban || '';
+  const meetingDate = currentSettings.meetingDate || '';
+
+  return `السلام عليكم ورحمة الله وبركاته يا ${reg.name}،
+
+نود تذكيركم بموعد وتفاصيل اشتراك اجتماع أسرة الحميدان:
+• المبلغ المطلوب سداده: ${remaining} ريال (إجمالي الاشتراك: ${total} ريال لعدد ${reg.totalMembers || 0} أفراد).
+• موعد الاجتماع: ${meetingDate}
+
+بيانات الحساب البنكي للتحويل:
+- البنك: ${bank}
+- الحساب: ${acc}
+- الآيبان: ${iban}
+
+فضلاً بعد التحويل، إشعارنا بصورة الإيصال لاعتماد السداد.
+شاكرين ومقدرين لكم تعاونكم وحرصكم الدائم.`;
+}
+
+function sendReminderWhatsApp() {
+  if (!activeReminderReg) return;
+  const phone = (activeReminderReg.phone || '').trim();
+  const previewEl = document.getElementById('reminderMessagePreview');
+  const msg = previewEl ? previewEl.value : formatPaymentReminderMessage(activeReminderReg, activeReminderReg.totalAmount);
+
+  if (!phone) {
+    showAdminToast('⚠️ لا يوجد رقم جوال مسجل لهذا الحساب');
+    return;
+  }
+
+  const cleanPhone = MessagingService.cleanPhoneNumber(phone);
+  window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  showAdminToast('✓ جاري فتح تطبيق واتساب للإرسال...');
+}
+
+function sendReminderSms() {
+  if (!activeReminderReg) return;
+  const phone = (activeReminderReg.phone || '').trim();
+  const previewEl = document.getElementById('reminderMessagePreview');
+  const msg = previewEl ? previewEl.value : formatPaymentReminderMessage(activeReminderReg, activeReminderReg.totalAmount);
+
+  if (!phone) {
+    showAdminToast('⚠️ لا يوجد رقم جوال مسجل');
+    return;
+  }
+
+  window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+  showAdminToast('✓ جاري فتح تطبيق الرسائل النصية SMS...');
+}
+
+async function sendReminderAutoApi() {
+  if (!activeReminderReg) return;
+  const phone = (activeReminderReg.phone || '').trim();
+  const previewEl = document.getElementById('reminderMessagePreview');
+  const msg = previewEl ? previewEl.value : formatPaymentReminderMessage(activeReminderReg, activeReminderReg.totalAmount);
+
+  if (!currentSettings?.messaging?.enabled || !currentSettings?.messaging?.token) {
+    showAdminToast('⚠️ يجب تفعيل بوابة الرسائل وضبط المفتاح السري في تبويب الإعدادات أولاً');
+    return;
+  }
+
+  const btn = document.getElementById('btnReminderAutoApi');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> <span>جاري الإرسال عبر البوابة...</span>';
+  }
+
+  try {
+    const res = await MessagingService.send(phone, msg, currentSettings.messaging);
+    if (res.success) {
+      showAdminToast('✓ تم إرسال التنبيه التلقائي بنجاح عبر البوابة!');
+      closePaymentReminderModal();
+    } else {
+      showAdminToast('❌ فشل الإرسال التلقائي: ' + (res.error || 'خطأ في الاتصال بالبوابة'));
+    }
+  } catch (err) {
+    console.error(err);
+    showAdminToast('❌ تعذر الإرسال: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>⚡</span> <span>إرسال تلقائي عبر البوابة</span>';
+    }
+  }
+}
+
+function copyReminderText() {
+  const previewEl = document.getElementById('reminderMessagePreview');
+  if (!previewEl) return;
+  navigator.clipboard.writeText(previewEl.value).then(() => {
+    showAdminToast('✓ تم نسخ نص التذكير إلى الحافظة');
+  }).catch(() => {
+    previewEl.select();
+    document.execCommand('copy');
+    showAdminToast('✓ تم نسخ النص');
+  });
+}
+
+// Bulk Reminder Modal
+function openBulkReminderModal() {
+  const pendingFamilies = allRegistrations.filter(r => (r.status || 'pending') !== 'paid');
+  const modal = document.getElementById('bulkReminderModal');
+  if (!modal) return;
+
+  const countEl = document.getElementById('bulkModalCount');
+  const totalEl = document.getElementById('bulkModalTotalRemaining');
+  const listEl = document.getElementById('bulkModalFamiliesList');
+  const broadcastEl = document.getElementById('bulkBroadcastPreview');
+
+  let totalRemaining = 0;
+  pendingFamilies.forEach(r => {
+    const total = Number(r.totalAmount) || 0;
+    const paid = Number(r.paidAmount) || 0;
+    totalRemaining += Math.max(0, total - paid);
+  });
+
+  if (countEl) countEl.textContent = pendingFamilies.length;
+  if (totalEl) totalEl.textContent = totalRemaining.toLocaleString('en-US') + ' ريال';
+
+  if (listEl) {
+    if (pendingFamilies.length === 0) {
+      listEl.innerHTML = '<div style="padding:16px; text-align:center; color:var(--gray-500);">جميع الأسر قامت بالسداد ولله الحمد 🎉</div>';
+    } else {
+      listEl.innerHTML = pendingFamilies.map(r => {
+        const total = Number(r.totalAmount) || 0;
+        const paid = Number(r.paidAmount) || 0;
+        const rem = Math.max(0, total - paid);
+        return `
+          <div class="bulk-family-row">
+            <div class="bulk-family-info">
+              <span class="bulk-family-name">${escapeHtml(r.name)}</span>
+              <span class="bulk-family-meta">${r.phone || 'بدون جوال'} • متبقي: ${rem} ريال</span>
+            </div>
+            <button type="button" class="btn-bulk-send-single" onclick="sendIndividualQuickReminder('${r.id}')">
+              تنبيه 🔔
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  const bank = currentSettings.bankName || 'مصرف الراجحي';
+  const acc = currentSettings.accountName || 'صندوق عائلة الحميدان';
+  const iban = currentSettings.iban || '';
+  const date = currentSettings.meetingDate || '';
+
+  const groupMsg = `السلام عليكم ورحمة الله وبركاته،
+الأخوة والأخوات الكرام أبناء وبنات أسرة الحميدان حفظكم الله،
+
+تذكيراً بموعد اجتماع العائلة المبارك (${date})، نرجو من الأسر الكريمة التي لم تُسدد رسوم الاشتراك المبادرة بالتحويل لتأكيد التجهيزات وحجوزات القاعة والضيافة:
+
+بيانات الحساب البنكي:
+- البنك: ${bank}
+- الحساب: ${acc}
+- الآيبان: ${iban}
+
+شاكرين تعاونكم المستمر وحرصكم على اجتماع شمل العائلة.`;
+
+  if (broadcastEl) broadcastEl.value = groupMsg;
+
+  modal.classList.add('active');
+}
+
+function closeBulkReminderModal() {
+  const modal = document.getElementById('bulkReminderModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function copyBulkBroadcastMessage() {
+  const el = document.getElementById('bulkBroadcastPreview');
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    showAdminToast('✓ تم نسخ نص رسالة قروب العائلة');
+  }).catch(() => {
+    el.select();
+    document.execCommand('copy');
+    showAdminToast('✓ تم نسخ النص');
+  });
+}
+
+function sendIndividualQuickReminder(regId) {
+  closeBulkReminderModal();
+  openPaymentReminderModal(regId);
+}
+
+async function sendBulkAutoReminders() {
+  if (!currentSettings?.messaging?.enabled || !currentSettings?.messaging?.token) {
+    showAdminToast('⚠️ يجب تفعيل بوابة الرسائل التلقائية وضبط المفتاح السري في الإعدادات أولاً');
+    return;
+  }
+
+  const pendingFamilies = allRegistrations.filter(r => (r.status || 'pending') !== 'paid' && r.phone);
+  if (pendingFamilies.length === 0) {
+    showAdminToast('لا توجد أسر متبقي عليها مبالغ مع أرقام جوال');
+    return;
+  }
+
+  if (!confirm(`هل أنت متأكد من رغبتك في إرسال رسائل تذكير آلية إلى ${pendingFamilies.length} أسرة عبر البوابة؟`)) {
+    return;
+  }
+
+  const btn = document.getElementById('btnSendBulkAuto');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> <span>جاري إرسال التنبيهات آلياً...</span>';
+  }
+
+  let sentCount = 0;
+  let failCount = 0;
+
+  for (const reg of pendingFamilies) {
+    const total = Number(reg.totalAmount) || 0;
+    const paid = Number(reg.paidAmount) || 0;
+    const remaining = Math.max(0, total - paid);
+    const msg = formatPaymentReminderMessage(reg, remaining);
+
+    try {
+      const res = await MessagingService.send(reg.phone, msg, currentSettings.messaging);
+      if (res.success) {
+        sentCount++;
+      } else {
+        failCount++;
+      }
+    } catch (e) {
+      failCount++;
+    }
+
+    await new Promise(r => setTimeout(r, 600));
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>⚡</span> <span>إرسال تنبيه آلي لجميع الأسر المتبقية</span>';
+  }
+
+  showAdminToast(`✓ اكتمل الإرسال: تم إرسال ${sentCount} بنجاح` + (failCount > 0 ? ` وتعذر ${failCount}` : ''));
+  closeBulkReminderModal();
+}
+
+// Messaging Settings UI Handlers
+function handleMsgProviderChange() {
+  const provider = document.getElementById('settingMsgProvider')?.value;
+  const instanceGroup = document.getElementById('groupMsgInstanceId');
+  const instanceLabel = document.getElementById('labelMsgInstanceId');
+  const instanceInput = document.getElementById('settingMsgInstanceId');
+  const tokenLabel = document.getElementById('labelMsgToken');
+  const endpointInput = document.getElementById('settingMsgEndpoint');
+
+  if (provider === 'ultramsg') {
+    if (instanceGroup) instanceGroup.style.display = 'block';
+    if (instanceLabel) instanceLabel.textContent = 'معرّف الجلسة (Instance ID) *';
+    if (instanceInput) instanceInput.placeholder = 'مثال: instance12345';
+    if (tokenLabel) tokenLabel.textContent = 'رمز التوكن السري (Token) *';
+    if (endpointInput) endpointInput.placeholder = 'https://api.ultramsg.com/instance12345/messages/chat';
+  } else if (provider === 'taqnyat') {
+    if (instanceGroup) instanceGroup.style.display = 'block';
+    if (instanceLabel) instanceLabel.textContent = 'اسم المرسل المعتمد (Sender Name) *';
+    if (instanceInput) instanceInput.placeholder = 'مثال: ALHUMAIDAN';
+    if (tokenLabel) tokenLabel.textContent = 'مفتاح الربط API Key (Bearer Token) *';
+    if (endpointInput) endpointInput.placeholder = 'https://api.taqnyat.sa/v1/messages';
+  } else if (provider === '4jawaly') {
+    if (instanceGroup) instanceGroup.style.display = 'block';
+    if (instanceLabel) instanceLabel.textContent = 'اسم المرسل (Sender Name) *';
+    if (instanceInput) instanceInput.placeholder = 'مثال: ALHUMAIDAN';
+    if (tokenLabel) tokenLabel.textContent = 'مفتاح التطبيق (App Key) أو Base64 Token *';
+    if (endpointInput) endpointInput.placeholder = 'https://api-sms.4jawaly.com/api/v1.1/users/message';
+  } else if (provider === 'wasapi') {
+    if (instanceGroup) instanceGroup.style.display = 'block';
+    if (instanceLabel) instanceLabel.textContent = 'معرّف الهاتف (Phone ID / Instance)';
+    if (instanceInput) instanceInput.placeholder = 'مثال: 12345';
+    if (tokenLabel) tokenLabel.textContent = 'Wasapi API Key *';
+    if (endpointInput) endpointInput.placeholder = 'https://api.wasapi.io/prod/api/v1/messages';
+  } else {
+    if (instanceGroup) instanceGroup.style.display = 'block';
+    if (instanceLabel) instanceLabel.textContent = 'معرف الحساب / Sender ID (اختياري)';
+    if (tokenLabel) tokenLabel.textContent = 'API Key / Secret Token';
+    if (endpointInput) endpointInput.placeholder = 'https://your-webhook-endpoint.com/send';
+  }
+}
+
+async function testMessagingConnection() {
+  const phone = document.getElementById('settingMsgTestPhone')?.value.trim();
+  if (!phone) {
+    showAdminToast('⚠️ يرجى إدخال رقم جوال لإرسال الرسالة التجريبية إليه');
+    document.getElementById('settingMsgTestPhone')?.focus();
+    return;
+  }
+
+  const provider = document.getElementById('settingMsgProvider')?.value;
+  const instanceId = document.getElementById('settingMsgInstanceId')?.value.trim();
+  const token = document.getElementById('settingMsgToken')?.value.trim();
+  const endpoint = document.getElementById('settingMsgEndpoint')?.value.trim();
+
+  if (!token) {
+    showAdminToast('⚠️ يرجى إدخال مفتاح الربط السري (API Token / Key)');
+    document.getElementById('settingMsgToken')?.focus();
+    return;
+  }
+
+  const testConfig = {
+    provider,
+    instanceId,
+    token,
+    endpoint
+  };
+
+  showAdminToast('⏳ جاري إرسال الرسالة التجريبية عبر البوابة...');
+
+  try {
+    const testMsg = `السلام عليكم ورحمة الله، هذه رسالة تجريبية ناجحة من لوحة إدارة اجتماع عائلة الحميدان بنظام ${provider === 'ultramsg' ? 'الواتساب السحابي' : 'الرسائل النصية SMS'}. تم الربط بنجاح!`;
+    const res = await MessagingService.send(phone, testMsg, testConfig);
+
+    if (res.success) {
+      showAdminToast('🎉 نجح الاختبار! تم إرسال الرسالة بنجاح إلى ' + phone);
+    } else {
+      showAdminToast('❌ فشل الاختبار: ' + (res.error || 'تأكد من صحة بيانات التوكن ورقم الجلسة'));
+    }
+  } catch (err) {
+    console.error(err);
+    showAdminToast('❌ حدث خطأ أثناء الاتصال: ' + err.message);
+  }
+}
+
 
 // ==========================================
 // Expenses Management
@@ -688,6 +1293,25 @@ function populateSettingsInputs() {
   if (acc) acc.value = currentSettings.accountName || 'صندوق عائلة الحميدان';
   if (iban) iban.value = currentSettings.iban || 'SA0000000000000000000000';
   if (pin) pin.value = currentSettings.adminPin || '1448';
+
+  // Messaging Gateway Settings
+  const msgConfig = currentSettings.messaging || {};
+  const msgAuto = document.getElementById('settingMsgAutoEnabled');
+  const msgProv = document.getElementById('settingMsgProvider');
+  const msgInst = document.getElementById('settingMsgInstanceId');
+  const msgTok = document.getElementById('settingMsgToken');
+  const msgEnd = document.getElementById('settingMsgEndpoint');
+  const msgReg = document.getElementById('settingMsgOnRegister');
+  const msgPay = document.getElementById('settingMsgOnPayment');
+
+  if (msgAuto) msgAuto.checked = !!msgConfig.enabled;
+  if (msgProv && msgConfig.provider) msgProv.value = msgConfig.provider;
+  if (msgInst) msgInst.value = msgConfig.instanceId || '';
+  if (msgTok) msgTok.value = msgConfig.token || '';
+  if (msgEnd) msgEnd.value = msgConfig.endpoint || '';
+  if (msgReg) msgReg.checked = msgConfig.autoSendOnRegister !== false;
+  if (msgPay) msgPay.checked = msgConfig.autoSendOnPayment !== false;
+  handleMsgProviderChange();
 }
 
 async function handleSaveSettings(e) {
@@ -699,11 +1323,20 @@ async function handleSaveSettings(e) {
     bankName: document.getElementById('settingBankName')?.value.trim() || 'اسم البنك',
     accountName: document.getElementById('settingAccountName')?.value.trim() || 'صندوق عائلة الحميدان',
     iban: document.getElementById('settingIban')?.value.trim() || 'SA0000000000000000000000',
-    adminPin: document.getElementById('settingAdminPin')?.value.trim() || '1448'
+    adminPin: document.getElementById('settingAdminPin')?.value.trim() || '1448',
+    messaging: {
+      enabled: document.getElementById('settingMsgAutoEnabled')?.checked || false,
+      provider: document.getElementById('settingMsgProvider')?.value || 'ultramsg',
+      instanceId: document.getElementById('settingMsgInstanceId')?.value.trim() || '',
+      token: document.getElementById('settingMsgToken')?.value.trim() || '',
+      endpoint: document.getElementById('settingMsgEndpoint')?.value.trim() || '',
+      autoSendOnRegister: document.getElementById('settingMsgOnRegister')?.checked ?? true,
+      autoSendOnPayment: document.getElementById('settingMsgOnPayment')?.checked ?? true
+    }
   };
 
   await apiUpdateSettings(newSettings);
-  showAdminToast('✓ تم حفظ إعدادات الاجتماع وموقع قوقل ماب بنجاح');
+  showAdminToast('✓ تم حفظ إعدادات الاجتماع والرسائل التلقائية بنجاح');
 }
 
 // ==========================================
