@@ -89,9 +89,9 @@ function initAdminDashboard() {
   });
 
   // Setup tabs
-  document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+  document.querySelectorAll('.admin-tab-btn, .admin-tab-pill').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const target = e.target.getAttribute('data-tab');
+      const target = e.currentTarget.getAttribute('data-tab');
       switchTab(target);
     });
   });
@@ -106,11 +106,11 @@ function initAdminDashboard() {
   }
 
   // Filter pills
-  document.querySelectorAll('.filter-pill').forEach(pill => {
+  document.querySelectorAll('.filter-pill, .filter-chip-btn, .filter-pill-btn').forEach(pill => {
     pill.addEventListener('click', (e) => {
-      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-      e.target.classList.add('active');
-      currentFilter = e.target.getAttribute('data-filter');
+      document.querySelectorAll('.filter-pill, .filter-chip-btn, .filter-pill-btn').forEach(p => p.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      currentFilter = e.currentTarget.getAttribute('data-filter');
       renderRegistrations();
     });
   });
@@ -129,8 +129,8 @@ function initAdminDashboard() {
 }
 
 function switchTab(tabId) {
-  document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
+  document.querySelectorAll('.admin-tab-btn, .admin-tab-pill').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
 
   document.querySelectorAll('.tab-content-panel').forEach(p => p.style.display = 'none');
   const activePanel = document.getElementById(`tab-${tabId}`);
@@ -219,8 +219,8 @@ function toggleFullStats() {
   }
 }
 
-// Mobile View Mode Switcher: Cards vs Table
-let currentViewMode = (window.innerWidth <= 768) ? 'cards' : 'table';
+// Mobile View Mode: 100% Dedicated Cards
+let currentViewMode = 'cards';
 function toggleViewMode() {
   const tableContainer = document.getElementById('desktopTableContainer');
   const cardsContainer = document.getElementById('seniorCardsContainer');
